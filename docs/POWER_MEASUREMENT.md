@@ -10,7 +10,7 @@ Open a routed design and run a report:
 ~~~tcl
 report_power -file build/power/power_unannotated.rpt
 ~~~
-The power folder must exist first. Record the clock, ambient/device temperature assumptions, voltage, switching-activity confidence and vectorless/default estimates. For higher-quality estimates, capture separate idle and active inference windows in Vivado simulator, export activity as SAIF, map to the **matching** implemented design and rerun report_power. SAIF mapping is tool-specific and has not been automated or physically verified by this project.
+The power folder must exist first. Record the clock, ambient/device temperature assumptions, voltage, switching-activity confidence and vectorless/default estimates. An experimental scripted three-phase RTL SAIF workflow is now available in [SAIF_POWER_WORKFLOW.md](SAIF_POWER_WORKFLOW.md): **idle, complete weight/bias loading and repeated maximum-network inference**. It exports SAIF with XSim and imports into the existing routed UART/NPU netlist, recording unmatched nets. This software/tool integration has **not yet been validated in Vivado**. It captures only the NPU core hierarchy, not UART or board-wide switching. Do not claim the activity-informed estimates are high confidence unless Vivado confirms meaningful net matching.
 
 ## Optional physical measurement protocol
 
