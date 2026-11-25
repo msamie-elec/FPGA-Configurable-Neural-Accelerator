@@ -86,3 +86,33 @@ For actual measured electrical energy, see [physical rail-measurement protocol](
 - **No physical power claim unless a calibrated meter has been used**.
 
 The best next improvement if mapping coverage is low is a matching netlist-level simulation and a calibrated board/FPGA rail measurement; neither is automatically supplied by these scripts.
+
+
+## Vivado 2025.2.1 troubleshooting — `got stop` during annotation
+
+The original `analyze_npu_saif_power.tcl` compared `[current_design]` with the RTL top string. Vivado returned `stop` in a real user routed design, causing an **incorrect early failure** even though the project opened successfully. The corrected script checks `[get_property TOP [get_filesets sources_1]]` instead, and prints the loaded implementation design name separately.
+
+If this failure occurred, **do not repeat the SAIF simulation**: existing nonempty `idle.saif`, `loading.saif`, `inference.saif` are reusable. Download the corrected script into your existing repository and rerun only stage B, then PowerShell stage C.
+
+Until the three power reports actually exist, `summarize_saif_power.py` correctly raises `Missing Vivado report ... power_vectorless.rpt`. That error is downstream of the interrupted Vivado analysis, not a problem with Python.
+
+### Direct Vivado Tcl workaround (without downloading anything)
+
+With the **routed UART/NPU design already open** (`open_run impl_1`), set `power_dir` to the directory containing the three valid SAIF files:
+
+```tcl
+set power_dir {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/FPGA-NN-Accelerator-IP-6/build/power_activity}
+set reports [file join $power_dir reports]
+file mkdir $reports
+puts "Project top: [get_property TOP [get_filesets sources_1]]"
+reset_switching_activity -all
+report_power -file [file join $reports power_vectorless.rpt]
+foreach phase {idle loading inference} {
+  reset_switching_activity -all
+  read_saif -strip_path tb_npu_power_activity -out_file [file join $reports "${phase}_unmatched.txt"] [file join $power_dir "${phase}.saif"]
+  report_power -file [file join $reports "power_${phase}_saif.rpt"]
+  report_switching_activity -file [file join $reports "activity_${phase}.rpt"]
+}
+```
+
+This is a workaround, not a claim that the signal mapping succeeded. Open each `*_unmatched.txt` and inspect coverage/confidence before interpreting power figures. Run the PowerShell summary after all reports are written.
