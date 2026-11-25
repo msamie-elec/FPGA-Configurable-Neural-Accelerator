@@ -16,6 +16,7 @@ module tb_mlp_engine;
   wire [2:0] predicted_class;
   wire [63:0] outputs;
   integer i,cycles;
+  reg [87:0] reference_vectors [0:63];
   mlp_engine #(.LANES(LANES)) dut(
     .clk(clk),.rst(rst),.start(start),.features(features),
     .layer_count(layer_count),.input_size(input_size),
@@ -77,6 +78,12 @@ module tb_mlp_engine;
     run_check(64'h0000000001020305,5,3,0);
     run_check(64'h0000000002010701,1,7,1);
     run_check(64'h0000000000000000,0,0,0);
+    $readmemh("build/mlp_vectors.hex",reference_vectors);
+    for(i=0;i<64;i=i+1)
+      run_check(reference_vectors[i][63:0],
+        $signed(reference_vectors[i][71:64]),
+        $signed(reference_vectors[i][79:72]),
+        reference_vectors[i][82:80]);
     // Runtime topology reconfiguration: 4->2, without resynthesis.
     layer_count=1;layer0_size=2;
     for(i=0;i<64;i=i+1) set_weight(i,0);
