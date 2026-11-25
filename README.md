@@ -72,9 +72,9 @@ Use the real Windows COM port. GUI controls drive signed INT8 features, not phys
 py host/benchmark_npu.py --port COM4 --model all --count 100 --warmup 5
 ```
 
-This loads all three model sizes, compares every FPGA score against the independent Python reference, and writes per-transaction CSV and aggregate JSON under `build/benchmarks/`. It reports p50/p95/p99 **PC–UART–FPGA round-trip latency**, model load time and observed single-stream transaction rate.
+This loads all three model sizes, compares every FPGA score against the independent Python reference, and writes per-transaction CSV and aggregate JSON under `build/benchmarks/`. It reports p50/p95/p99 **PC–UART–FPGA round-trip latency**, model load time and observed single-stream transaction rate. An optional firmware telemetry command (0x54) also provides FPGA dispatch-to-completion clock cycles.
 
-**It does not claim intrinsic accelerator inference cycles or device power.** To measure those, a clock-cycle counter or trigger signal in FPGA RTL and external measurement instrumentation must be added.
+To measure **FPGA clock cycles independently of UART**, rebuild and program the latest integrated UART/NPU bitstream and run:\n\n```powershell\npy host/benchmark_npu.py --port COM4 --model all --count 100 --warmup 5 --fpga-cycles\n```\n\nThe telemetry command returns FPGA **dispatch-to-valid** cycle counts (including handshake overhead), not electrical power or an isolated multiplier pipeline latency. The earlier bitstream does not support this command; don't use `--fpga-cycles` until programming the new bitstream. Physical validation of telemetry and new routed timing are still pending.
 
 ## Repository guides
 
