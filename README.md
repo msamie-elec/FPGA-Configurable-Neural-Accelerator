@@ -81,6 +81,24 @@ This produces hierarchical IP/resource, timing, critical-path, DRC, methodology 
 
 **The supplied weights are deterministic numerical test fixtures, not a trained industrial classifier.** This repository assesses FPGA architecture, correctness and performance. It is deliberately independent of individual applications.
 
+## Matched post-synthesis netlist power assessment (experimental)
+
+The previous RTL-core SAIF data matched only **99/3,664** nets in the routed UART/NPU design. To address this, a new **core-only post-synthesis netlist SAIF** workflow is available: Vivado exports a functional core Verilog netlist and matching checkpoint, XSim captures idle/loading/inference activity from the structural netlist, and Vivado reads that SAIF into the **same** checkpoint. This is a separate OOC study, not a routed-UART or physical-power claim.
+
+[Complete one-command netlist power workflow and limitations](docs/NETLIST_POWER_WORKFLOW.md). From a fresh Vivado Tcl Console in the downloaded repository root:
+
+```tcl
+source vivado/run_npu_netlist_power.tcl
+```
+
+After it completes, in PowerShell:
+
+```powershell
+py scripts/assess_netlist_saif.py --reports build/netlist_power/reports
+```
+
+**The new Vivado scripts remain pending first-run verification.** Their Python activity-quality screening is deliberately conservative and does not claim measured power or automatically approve the estimate.
+
 ## Activity-aware FPGA power-analysis workflow (experimental)
 
 [Phase-separated SAIF power assessment — Vivado commands and evidence limits](docs/SAIF_POWER_WORKFLOW.md). In Vivado Tcl Console, from the repository root:
@@ -91,7 +109,7 @@ set ::NPU_UART_XPR {C:/path/to/your/previous/build/uart_npu_project/uart_npu.xpr
 source vivado/analyze_npu_saif_power.tcl
 ```
 
-Then in PowerShell: `py scripts/summarize_saif_power.py --reports build/power_activity/reports`. The baseline routed Vivado UART/NPU vectorless estimate is **80 mW total, 18 mW dynamic, 62 mW static**, **Medium confidence**. The new SAIF flow has **not yet been executed in Vivado**; review matched/unmatched nets before comparing phases. This is not a measurement of board power.
+Then in PowerShell: `py scripts/summarize_saif_power.py --reports build/power_activity/reports`. The baseline routed Vivado UART/NPU vectorless estimate is **80 mW total, 18 mW dynamic, 62 mW static**, **Medium confidence**. The prior RTL SAIF flow was completed in Vivado with approximately 3% net matching; review matched/unmatched nets before comparing phases. This is not a measurement of board power.
 
 ## Industrial verification, reliability and power assessment
 
