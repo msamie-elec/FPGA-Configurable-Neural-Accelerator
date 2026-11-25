@@ -63,3 +63,14 @@ The UART protocol includes a byte XOR checksum; CRC and timeout/recovery hardeni
 - Canonical programming bitstream: `build/bitstream/arty_a7_uart_npu.bit`.
 
 **Remaining qualification:** packaging/catalog proof, independent IP-only routed utilisation, additional directed and reset/fault tests, multiple-implementation variation, long-duration soak, and measured energy. No claims beyond observed evidence.
+
+
+## Independent reusable-IP implementation qualification (additional evidence)
+
+- The user-supplied independent consumer Vivado routed design met **100 MHz**, with **+2.006 ns setup slack** and **+0.043 ns hold slack**.
+- **NPU hierarchical instance:** **811 LUTs**, **709 FFs**, **8 BRAM18**, **12 DSP48E1**. Whole independent consumer: **862 LUTs**, **1,025 FFs**, **8 BRAM18**, **12 DSP48E1**. These numbers differ from full UART/NPU resources because the two designs contain different wrappers.
+- **User-reported follow-up physical comparison:** 3,000/3,000 correct predictions (1,000 per topology), p95 UART times **16.284/16.317/15.504 ms**. The raw 3,000-case JSON/CSVs are not yet archived.
+- **Power:** an approximately **78 mW Vivado on-chip estimate**, including ~62 mW static and ~16 mW dynamic, was reported for the independent consumer. This is *not instrument-measured consumption*. Physical energy per inference and GOPS/W remain unreported.
+- **Reliability:** a hardware endurance runner and RTL protocol fault tests are now present, but the new campaign has not yet been physically run. The XOR checksum and missing partial-message timeout limit current transport robustness.
+
+The authoritative evidence review and scope are documented in [Verification Report](VERIFICATION_REPORT.md). No claim of an AXI interface, functional safety qualification, or trained model accuracy is made.
