@@ -21,3 +21,9 @@ for lanes in 1 4 8; do
         -o "build/tb_mlp_${lanes}.vvp" rtl/mlp_engine.sv tb/tb_mlp_engine.sv
     vvp "build/tb_mlp_${lanes}.vvp"
 done
+
+echo 'Testing scalable banked NPU against independent Python reference ...'
+python3 host/reference_scalable.py build
+iverilog -g2012 -Wall -s tb_npu_scalable -o build/tb_npu_scalable.vvp \
+    rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv tb/tb_npu_scalable.sv
+vvp build/tb_npu_scalable.vvp
