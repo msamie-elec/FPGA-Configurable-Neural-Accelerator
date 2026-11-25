@@ -22,5 +22,7 @@ if {[llength $xcis] == 0} {
 puts "CONSUMER IP INSTANTIATION PASS: $vlnv"
 puts "GENERATED IP: $xcis"
 puts "Next: review IP output products and run synthesis in a consuming top."
-save_project
+# create_project and create_ip already persist the .xpr/.xci metadata.
+# Vivado 2025.2.1 does not support bare save_project (17-163).
 close_project
+puts "CONSUMER PROJECT COMPLETED: [file join $projectdir npu_ip_consumer.xpr]"
