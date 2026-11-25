@@ -1,5 +1,16 @@
 # FPGA Configurable Neural Accelerator
 
+## Application focus — real bearing-condition monitoring (work in progress)
+
+Our **first targeted application is healthy vs damaged rolling bearings**, not a general electric-motor or IGBT inverter diagnosis system. The existing FPGA GUI still loads *deterministic demonstration weights* and does **not** contain a trained bearing model.
+
+A new reproducible measured-signal preparation pipeline is under `bearing/`: paired synchronous vibration/current data become eight signal features, while preserving source recording and physical bearing ID. Only real labelled experimental recordings will be used for training and validation; synthetic signals appear exclusively in numerical unit tests. The raw Paderborn recordings are independently obtained from the university and must not be committed because of their non-commercial research licence.
+
+See [Bearing condition-monitoring scope, feature definition, data origin and validation protocol](docs/BEARING_APPLICATION.md). Training, quantisation of a trained model and bearing-specific GUI labels are not yet implemented.
+
+---
+
+
 ## V0.4 — UART + scalable NPU + interactive GUI (integration milestone)
 
 The experimental integrated top `arty_a7_uart_npu_top` connects the previously verified 104-neuron-capacity NPU to an 8N1, 115200-baud USB-UART interface. The board accepts runtime weight/bias writes, topology configuration, 32 signed INT8 sensor inputs and returns eight INT8 scores with an argmax class. The FPGA top uses **E3 100 MHz, UART A9/D10, BTN1 reset, four user LEDs**.
