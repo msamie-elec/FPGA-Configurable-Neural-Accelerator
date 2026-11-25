@@ -9,9 +9,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Icarus Verilog
         run: sudo apt-get update && sudo apt-get install -y iverilog
-      - name: Run self-checking regression
+      - name: Run self-checking regressions
         run: bash scripts/test.sh
-      - name: Check for duplicate RTL roots
-        run: |
-          test ! -e hardware/rtl
-          test ! -e rtl/README.md
+      - name: Verify repository structure
+        run: python3 scripts/check_structure.py

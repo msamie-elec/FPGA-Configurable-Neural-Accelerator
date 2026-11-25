@@ -1,60 +1,54 @@
 # FPGA Configurable Neural Accelerator
 
-A clean-room rebuild of an INT8 FPGA inference accelerator, targeting the Digilent Arty A7-35T. The project is designed to grow into a **runtime-configurable multilayer NPU with a PC GUI**, while keeping one source of truth for every RTL module.
+Clean-room FPGA Edge AI project for Digilent **Arty A7-35T**. The long-term target is a **runtime-configurable INT8 multilayer NPU with a Python GUI**. This repository tracks verified milestones rather than claiming unfinished features.
 
-## Current state — clean baseline (v0.1)
+## V0.1 — baseline under hardware validation
 
-The first baseline is a **two-output, four-feature dense classifier** using signed INT8 weights and inputs, signed 32-bit accumulators, and one time-multiplexed multiplier. Weights can be changed through a write port; the board demo initially uses the default weights. This is **not yet** a complete runtime-loaded multilayer accelerator, a UART-based demonstration, or a measured 100 MHz hardware success.
-
-### Repository layout
+A 4-input / 2-output signed INT8 dense classifier with one time-multiplexed multiplier, signed INT32 output scores and idle-state weight writes. One source of truth exists for all RTL: `rtl/`. The Arty demo uses four slide switches (each represents either 0 or +8), BTN0 to start, BTN1 for reset and four user LEDs (class 0, class 1, result seen, busy).
 
 ```text
-rtl/
-  npu_core.sv          # sole authoritative inference RTL
-  arty_a7_top.sv       # physical board top, button + switches + LEDs
-tb/
-  tb_npu_core.sv       # deterministic self-checking simulation
-constraints/
-  arty_a7_35t.xdc     # board I/O and 100 MHz timing
-vivado/
-  build.tcl            # reproducible out-of-tree batch build
-scripts/
-  test.sh              # Icarus Verilog regression
-docs/
-  ARCHITECTURE.md      # design boundary and module contract
-  ROADMAP.md           # staged industrial-grade deliverables
-.github/workflows/
-  rtl.yml              # CI simulation and repository structure guard
+rtl/           npu_core.sv, arty_a7_top.sv
+tb/            directed and deterministic extended RTL regressions
+constraints/   arty_a7_35t.xdc
+vivado/        create_project.tcl (GUI .xpr), build.tcl (batch timing/bitstream)
+scripts/       test.sh, check_structure.py
+docs/          ARCHITECTURE.md, ROADMAP.md
+.github/       workflow running both simulations + structure guard
 ```
 
-There is **no second RTL directory** and no committed Vivado build products. No empty placeholder folders.
+## Test in WSL / Linux
 
-## Quick test
-
-On Linux/WSL with `iverilog` and `vvp` installed:
+Requires `iverilog` and `vvp`.
 
 ```bash
 bash scripts/test.sh
+python3 scripts/check_structure.py
 ```
 
-The script compiles the DUT/testbench and checks three classifications, including a runtime weight update.
+Includes known-answer tests, signed extremes, runtime weight changes, latched-input checks, valid/busy protocol checks and 128 deterministic pseudo-random inputs.
 
-## Vivado batch build
+## Open the complete Vivado project in GUI
 
-Open a terminal with Xilinx Vivado on PATH, then from the repository root:
+From the repository root, in a terminal with Vivado on PATH:
+
+```bash
+vivado -mode batch -source vivado/create_project.tcl
+```
+
+Then open **`build/vivado_project/neural_accelerator.xpr`** using Vivado. This generated .xpr includes the RTL hierarchy and pin/timing constraints. It is not checked in because it is reproducibly generated; the generated project can be explored in Vivado and built with its normal GUI flow.
+
+## Fully scripted implementation
 
 ```bash
 vivado -mode batch -source vivado/build.tcl
 ```
 
-The script targets `xc7a35ticsg324-1L` and writes reports and the bitstream into ignored `build/`. Verify your physical board part and I/O constraints before programming. A successful build and timing closure must be demonstrated on the user's machine; it is **not asserted** here.
+Target part: `xc7a35ticsg324-1L`. Outputs including `timing_summary.rpt`, `utilization.rpt`, `drc.rpt` and `arty_a7_npu.bit` are written under ignored `build/`.
 
-For a GUI and full runtime neural-network configuration, see [Roadmap](docs/ROADMAP.md).
+**Status**: CI simulation and source-hierarchy checks are automated. Hardware timing closure, bitstream and board behaviour must still be checked on the real target; they are not yet validated here.
 
-## Board demonstration
+## Roadmap
 
-After programming, use the four slide switches to choose four binary sensor channels (0 or 8) and press BTN0 to run one inference. LEDs show the winning class, a sticky result-ready indication and the busy flag. BTN0 has synchronisation/edge detection but no mechanical debouncer; press it once per inference. BTN1 resets the system.
+See [Architecture](docs/ARCHITECTURE.md) and [Roadmap](docs/ROADMAP.md). Multi-lane MAC, BRAM-backed layer scheduling, runtime model loading, UART, GUI and performance benchmarking are subsequent separately verified stages.
 
-## Scope and validation
-
-Current baseline demonstrates integration mechanics; full model compiler, per-layer scaling, UART, GUI, memory architecture, error handling and application-specific datasets are explicit later milestones. Do not reuse metrics from the archived implementation as evidence for this clean design.
+The prior experiment is retained in the archive branch. Its timing/performance reports are **not** evidence for this rebuild.
