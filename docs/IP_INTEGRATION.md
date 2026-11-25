@@ -52,7 +52,7 @@ Outputs to local ignored `build/ip_repo/npu_accelerator_ip_1_0/component.xml` (p
 source vivado/check_npu_ip_catalog.tcl
 ```
 
-**These Tcl flows have not been executed in Vivado by CI.** The source package, metadata, clock recognition and catalog integrity must be checked on Windows Vivado before claiming a validated IP-XACT release. The simulator only checks the RTL wrapper.
+**Packaging and catalog discovery passed in the first user Vivado 2025.2.1 run.** The revised metadata/wrapper and downstream consumer generation remain to be tested. Automated CI checks the RTL, not the vendor IP-XACT packager.
 
 ## Add to another Vivado design
 
@@ -76,3 +76,22 @@ Then open IP Integrator and search for **Configurable INT8 Neural Inference Acce
 - [ ] Signed-off datasheet with versioned Vivado, netlist and bitstream provenance.
 
 AMD reference: [Vivado Creating and Packaging Custom IP (UG1118)](https://docs.amd.com/r/en-US/ug1118-vivado-creating-packaging-custom-ip).
+
+## Validation evidence from Vivado 2025.2.1 (25 November 2026)
+
+The user ran the first packaging and catalog-check scripts successfully:
+
+```text
+PACKAGED IP: .../build/ip_repo/npu_accelerator_ip_1_0/component.xml
+CATALOG DISCOVERY PASS: msamie-elec.github.io:user:npu_accelerator_ip:1.0
+```
+
+The original package warned about a SystemVerilog top file, missing `FREQ_HZ`, missing product guide, and a clock with no associated bus interface. The packaging script now copies the Verilog-compatible wrapper into the generated build tree as a `.v` file and sets nominal `FREQ_HZ=100000000`. These corrections **must be retested using Vivado**. The direct synchronous interface has no AXI bus to associate with the clock.
+
+For an independent consumer-project smoke check, after packaging:
+
+```tcl
+source vivado/check_npu_ip_consumer.tcl
+```
+
+This creates a separate Vivado project, discovers the packaged VLNV, instantiates the IP as an `.xci`, and generates its output targets. It **does not yet prove OOC or full top-level routed synthesis**; that is an additional qualification test.
