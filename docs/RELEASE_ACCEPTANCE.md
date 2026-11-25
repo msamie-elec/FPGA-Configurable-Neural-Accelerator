@@ -12,7 +12,7 @@ This document is a **portfolio-ready acceptance checklist**, not a certification
 | Physical UART proof | Write model, run inference, Python parity | One medium-size example PASS | User hardware test screenshot |
 | Benchmark 3 model sizes | 100+ correct inferences each | PENDING hardware run | `build/benchmarks/benchmark_summary.json` |
 | Stability under repeated load | 1,000+ cycles, reset/reconnect | PENDING | future soak log |
-| Compute-only cycle timing | Register/ILA/counter measured | PENDING RTL instrumentation | future benchmark |
+| FPGA dispatch-to-valid cycle timing | Cycle counter over FPGA inference handshake | Implemented in UART RTL/host; hardware acceptance PENDING | `--fpga-cycles` benchmark after reprogramming |
 | Power & energy | Physical rail power measurement | PENDING | power lab worksheet |
 | Reproducible deliverables | Clean clone, launch GUI, results table | In progress | `README.md`, reports directory |
 
