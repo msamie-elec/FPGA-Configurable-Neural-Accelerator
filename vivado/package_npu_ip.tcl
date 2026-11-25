@@ -9,13 +9,25 @@ set projectdir [file join $root build ip_packaging_project]
 file mkdir [file dirname $out]
 if {[file exists $out]} {file delete -force $out}
 create_project -force npu_ip_packaging $projectdir -part xc7a35ticsg324-1L
+# AMD UG1118 recommends a Verilog top for packaging. The authoritative
+# standalone wrapper is Verilog-2001-compatible despite its .sv extension.
+# Copy it into an ignored build directory with a .v extension, without
+# duplicating user-maintained RTL sources.
+set wrapper_dir [file join $root build ip_wrapper]
+file mkdir $wrapper_dir
+set verilog_wrapper [file join $wrapper_dir npu_accelerator_ip.v]
+file copy -force -- [file join $root rtl npu_accelerator_ip.sv] $verilog_wrapper
 set files [list \
     [file join $root rtl npu_weight_bank.sv] \
     [file join $root rtl npu_scalable_core.sv] \
-    [file join $root rtl npu_accelerator_ip.sv]]
+    $verilog_wrapper]
 foreach f $files {
     add_files -norecurse -fileset sources_1 $f
-    set_property file_type SystemVerilog [get_files $f]
+    if {[file extension $f] eq ".v"} {
+        set_property file_type Verilog [get_files $f]
+    } else {
+        set_property file_type SystemVerilog [get_files $f]
+    }
 }
 set_property top npu_accelerator_ip [get_filesets sources_1]
 update_compile_order -fileset sources_1
@@ -30,6 +42,15 @@ set_property description {Application-independent 8-lane INT8 signed MLP inferen
 # Reconcile port metadata with the chosen RTL wrapper, not the UART board top.
 ipx::merge_project_changes ports $core
 ipx::merge_project_changes files $core
+# Make nominal 100 MHz clock explicit in IP catalog metadata. The
+# integrating FPGA project must still provide real clock constraints.
+set clk_if [ipx::get_bus_interfaces clk -of_objects $core]
+if {[llength $clk_if] == 0} {error "Packaged NPU IP has no clock interface"}
+set freq [ipx::get_bus_parameters FREQ_HZ -of_objects $clk_if]
+if {[llength $freq] == 0} {
+    set freq [ipx::add_bus_parameter FREQ_HZ $clk_if]
+}
+set_property value 100000000 $freq
 ipx::save_core $core
 set component [file join $out component.xml]
 if {![file exists $component]} {error "IP packaging failed to create $component"}
