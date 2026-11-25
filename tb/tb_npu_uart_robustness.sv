@@ -125,9 +125,12 @@ module tb_npu_uart_robustness;
     payload[0]=1;payload[1]=1;payload[2]=2;payload[3]=1;
     payload[4]=1;payload[5]=1;payload[6]=0;
     command(8'h43,7,0);
+    for(i=0;i<32;i=i+1) payload[i]=0;
+    payload[0]=10;
     command(8'h49,32,0);
     if(received[2]!==0 || received[4]!==20 || received[5]!==30)
-      $fatal(1,"failed to recover after invalid topology");
+      $fatal(1,"failed to recover after invalid topology status=%0d scores=%0d,%0d",
+             received[2],received[4],received[5]);
     // An abandoned partial frame followed by a system reset must not
     // cause a stale command to execute after reset.
     send_byte(8'ha5);
