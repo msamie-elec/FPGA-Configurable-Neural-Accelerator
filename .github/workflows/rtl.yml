@@ -1,0 +1,17 @@
+name: RTL simulation
+on:
+  push:
+  pull_request:
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: sudo apt-get update && sudo apt-get install -y iverilog
+      - name: Run self-checking regression
+        run: bash scripts/test.sh
+      - name: Check for duplicate RTL roots
+        run: |
+          test ! -e hardware/rtl
+          test ! -e rtl/README.md
