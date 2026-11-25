@@ -15,6 +15,7 @@ BIAS = 0x42
 CONFIGURE = 0x43
 INFER = 0x49
 PING = 0x50
+CYCLES = 0x54
 
 
 class ProtocolError(RuntimeError):
@@ -80,6 +81,15 @@ class NpuBoard:
 
     def ping(self):
         self.exchange(PING)
+
+    def read_cycle_count(self) -> int:
+        """Return previous inference dispatch-to-valid FPGA clock cycles.
+
+        Requires UART firmware implementing command 0x54, not legacy bitstream.
+        This counter excludes UART frame transfer and host scheduling latency.
+        """
+        reply = self.exchange(CYCLES)
+        return sum((value & 255) << (8*i) for i,value in enumerate(reply.scores[:4]))
 
     def write_weight(self, address: int, value: int):
         if not 0 <= address < 4096:
