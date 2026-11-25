@@ -1,5 +1,28 @@
 # FPGA Configurable Neural Accelerator
 
+## Bearing model: source-to-FPGA training/export workflow (V0.6)
+
+**The existing Arty A7 FPGA arithmetic and UART are physically verified.** A healthy-vs-damaged *bearing classifier* is **not yet trained** because original measured bearing recordings have not been acquired/processed here. We do not substitute generated feature values for real physical measurements.
+
+New modules in `bearing/` support conservative MATLAB waveform import, eight measured signal features, an official 32-specimen label manifest, grouped-bearing train/validation/test partitioning, small 8→16→8→2 MLP training, integer-exact FPGA weight/bias export, UART model programming and a separate bearing-case GUI. CI tests only synthetic code fixtures, not real bearing performance.
+
+Obtain the official Paderborn dataset and choose a meaningful set of distinct healthy and damaged bearing recordings. Store extracted `.mat` files in `data/bearing/raw/` (Git-ignored). Then:
+
+```powershell
+py -m pip install -r bearing/requirements.txt
+py -m bearing.convert_mat --input data/bearing/raw --labels bearing/paderborn_labels_official.csv --output build/bearing/features.csv
+py -m bearing.train_export --features build/bearing/features.csv --output build/bearing/trained
+py -m bearing.gui
+```
+
+**The MATLAB reader must be verified on a genuine sample before processing a whole dataset.** If the source uses a different MAT structure it raises an error rather than guessing. The `bearing_model.json` and `held_out_examples.csv` outputs stay under ignored `build/`. Real held-out results must be inspected before calling the model useful.
+
+Documentation: [Bearing application and operating procedure](docs/BEARING_APPLICATION.md).
+Source: [Paderborn University Bearing DataCenter](https://mb.uni-paderborn.de/en/kat/research/bearing-datacenter/data-sets-and-download). Raw measurements are CC BY-NC 4.0 and are not redistributed.
+
+---
+
+
 ## Application focus — real bearing-condition monitoring (work in progress)
 
 Our **first targeted application is healthy vs damaged rolling bearings**, not a general electric-motor or IGBT inverter diagnosis system. The existing FPGA GUI still loads *deterministic demonstration weights* and does **not** contain a trained bearing model.
