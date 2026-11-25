@@ -45,3 +45,16 @@ python3 -m py_compile host/gui.py host/npu_serial.py host/reference_scalable.py
 echo 'Testing hardware benchmark reference and reporting logic (mock only) ...'
 python3 -m unittest discover -s tests -p 'test_benchmark_npu.py' -v
 python3 -m py_compile host/benchmark_npu.py
+
+echo 'Verifying standalone IP wrapper with independent 48-vector Python oracle ...'
+iverilog -g2012 -Wall -s tb_npu_accelerator_ip -o build/tb_npu_accelerator_ip.vvp \
+    rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv \
+    rtl/npu_accelerator_ip.sv tb/tb_npu_accelerator_ip.sv
+vvp build/tb_npu_accelerator_ip.vvp
+
+echo 'Verifying hardware benchmark report calculations and producing artifacts ...'
+python3 -m unittest discover -s tests -p 'test_performance_analysis.py' -v
+python3 scripts/analyze_npu_performance.py \
+    --input docs/results/arty_a7_benchmark_2026-11-25.json \
+    --output build/performance
+python3 -m py_compile scripts/analyze_npu_performance.py
