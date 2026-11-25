@@ -5,6 +5,7 @@
 // Weight address: layer*1024 + neuron*32 + input (12 bits).
 // Bias address: layer*32 + neuron (7 bits).
 // Host must preload every used weight and bias before start.
+(* use_dsp = "yes" *)
 module npu_scalable_core (
   input wire clk, rst, start,
   input wire [255:0] features,
@@ -38,7 +39,7 @@ module npu_scalable_core (
   wire signed [7:0] read_weights[0:7];
   wire [8:0] weight_read_row = {layer_idx[1:0],7'b0}
       + {neuron_idx[4:0],2'b0} + {7'b0,group_idx};
-  reg signed [15:0] products[0:7];
+  (* use_dsp = "yes" *) reg signed [15:0] products[0:7];
   reg signed [17:0] sums_a[0:3];
   reg signed [19:0] sums_b[0:1];
   reg signed [31:0] acc;
