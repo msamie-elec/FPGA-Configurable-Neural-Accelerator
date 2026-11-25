@@ -1,0 +1,65 @@
+# Configurable INT8 FPGA Neural Accelerator — Technical Datasheet (Engineering Draft)
+
+**Status:** Hardware-verified *demonstrator*; not production-qualified or safety certified.
+**IP interface:** Standalone synchronous RTL wrapper, separate from the USB-UART Arty A7 showcase.
+**Reference FPGA:** Digilent Arty A7-35T, `xc7a35ticsg324-1L`; Vivado 2025.2.1.
+
+## Function and configuration
+
+| Parameter | Specification |
+|---|---|
+| Workload | Dense multilayer perceptron inference, batch 1 |
+| Topology | 1–4 computational layers, 1–32 inputs, hidden widths 1–32, output width 1–8 |
+| Maximum model | 32→32→32→32→8; 104 neurons and 3,328 active weights |
+| Number of shared multipliers | 8 parallel signed INT8 lanes |
+| Weight storage | 8 × 512 × 8-bit synchronous banks (mapping evidenced by 8 RAMB18 in integrated Vivado implementation) |
+| Arithmetic | Signed INT8 weights/activations; signed INT32 accumulation and bias; right shift 0–15; signed saturation |
+| Hidden activation | ReLU; output logits signed INT8 |
+| Classification | Lowest-index argmax |
+| Configuration | Runtime parallel programming port on IP; USB-UART adapter on board demo |
+| Model load persistence | SRAM weights/biases must be loaded after power-up and must be treated as undefined until programmed |
+| Design clock | Nominal 100 MHz, timing closed on prior UART-integrated design |
+| Production AXI support | **None**; not AXI-compliant without additional adapter |
+
+## Device implementation — reference build
+
+The user-supplied prior routed implementation reported 1,276 LUTs, 1,645 FFs, 8 BRAM18 and 12 DSP48E1, with nonnegative setup/hold slack. These are **integrated UART+NPU resources**, not isolated IP-only counts. IP-only utilisation, multiple-place/route statistics and Fmax remain to be measured.
+
+## Physical inference benchmark — 25 November 2026
+
+| Metric | Small 4→8→4→2 | Medium 8→16→8→2 | Large 32→32→32→32→8 |
+|---|---:|---:|---:|
+| MAC operations | 72 | 272 | 3,328 |
+| Measured dispatch-to-valid cycles | 114 | 250 | 2,394 |
+| Measured FPGA latency at 100 MHz | 1.14 µs | 2.50 µs | 23.94 µs |
+| Calculated effective core GOPS | 0.126 | 0.218 | 0.278 |
+| Calculated ideal non-overlap core inferences/s | 877,193 | 400,000 | 41,771 |
+| Mean PC/UART transaction | 15.915 ms | 15.854 ms | 15.281 ms |
+| Recorded UART p95 | 16.285 ms | 16.477 ms | 15.774 ms |
+| Model programming | 1.391 s | 4.782 s | 54.925 s |
+| FPGA/Python exact matches | 100/100 | 100/100 | 100/100 |
+
+**Definitions:** FPGA time is a dispatch-to-valid cycle count, not UART transport; one MAC is 2 operations for GOPS. Compute-only inference/s is calculated from cycles and assumes repeated non-overlapping jobs without communication delays. The UART inferences/s are substantially lower (approximately 63–65/s) at 115200 baud.
+
+The raw input to this datasheet is `docs/results/arty_a7_benchmark_2026-11-25.json`. Recalculate with `python3 scripts/analyze_npu_performance.py --input docs/results/arty_a7_benchmark_2026-11-25.json`.
+
+## Power, thermal and reliability boundaries
+
+Previous Vivado routed **on-chip estimated power** approximately 80 mW (18 mW dynamic, 62 mW static; unannotated switching activity and medium confidence). This is *not* physically measured board power. No credible watt-based energy/inference or GOPS/W can be established until power activity/rail measurements are improved.
+
+300 physical inferences produced no score mismatches, but do **not** establish a statistically strong field failure probability, memory error resilience, power-up robustness or safe behaviour under interrupted model programming.
+
+The UART protocol includes a byte XOR checksum; CRC and timeout/recovery hardening remain future work.
+
+## Versioning and reproducibility
+
+- Core RTL: `rtl/npu_scalable_core.sv`, `rtl/npu_weight_bank.sv`.
+- Reusable IP wrapper: `rtl/npu_accelerator_ip.sv`.
+- Catalog packaging: `vivado/package_npu_ip.tcl`.
+- Original physical benchmark: `docs/results/arty_a7_benchmark_2026-11-25.json`.
+- Self-checking simulation: `bash scripts/test.sh`.
+- Physical benchmark: `py host/benchmark_npu.py --port COM4 --model all --count 100 --warmup 5 --fpga-cycles`.
+- Expected benchmark hardware: telemetry-enabled UART/NPU bitstream, not the standalone IP package.
+- Canonical programming bitstream: `build/bitstream/arty_a7_uart_npu.bit`.
+
+**Remaining qualification:** packaging/catalog proof, independent IP-only routed utilisation, additional directed and reset/fault tests, multiple-implementation variation, long-duration soak, and measured energy. No claims beyond observed evidence.
