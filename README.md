@@ -21,7 +21,7 @@ source vivado/package_npu_ip.tcl
 source vivado/check_npu_ip_catalog.tcl
 ```
 
-*Catalog packaging and integration in a separate consuming Vivado project remain unverified until those Tcl commands succeed on Vivado 2025.2.1.*
+*Vivado 2025.2.1 first-run IP-XACT packaging and catalog discovery have now passed. The revised Verilog-compatible wrapper/clock metadata and independent consumer creation script still require validation. Run `source vivado/check_npu_ip_consumer.tcl` after packaging.*
 
 ---
 
