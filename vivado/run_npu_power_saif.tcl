@@ -26,7 +26,7 @@ set_property xsim.elaborate.debug_level typical [get_filesets sim_1]
 set_property xsim.simulate.custom_tcl [file join $npu_root vivado npu_power_xsim_phases.tcl] [get_filesets sim_1]
 set ::env(NPU_POWER_OUT) [file normalize $npu_dir]
 update_compile_order -fileset sim_1
-puts "Starting phase-specific Vivado simulator; $stop boundaries control SAIF."
+puts {Starting phase-specific Vivado simulator; Verilog stop boundaries control SAIF.}
 launch_simulation -mode behavioral -simset sim_1
 puts "After simulation, look for: [file join $npu_dir idle.saif]"
 puts "If XSim reports a Tcl or stop-boundary error, do NOT report activity-aware power."
