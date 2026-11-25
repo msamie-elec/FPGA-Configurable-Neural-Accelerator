@@ -22,7 +22,7 @@ catch {close_project}
 open_project $::NPU_UART_XPR
 if {[llength [get_runs impl_1]]==0} {error "Implementation run impl_1 missing in $::NPU_UART_XPR"}
 open_run impl_1
-set top [get_property TOP [current_design]]
+set top [current_design]
 if {$top ne "arty_a7_uart_npu_top"} {
   error "Expected routed UART/NPU board top arty_a7_uart_npu_top, got $top"
 }
