@@ -12,3 +12,6 @@ __pycache__/
 *.pyc
 *.vcd
 .DS_Store
+
+# Third-party Paderborn recordings (CC BY-NC 4.0; do not republish raw data)
+data/
