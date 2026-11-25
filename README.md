@@ -81,6 +81,18 @@ This produces hierarchical IP/resource, timing, critical-path, DRC, methodology 
 
 **The supplied weights are deterministic numerical test fixtures, not a trained industrial classifier.** This repository assesses FPGA architecture, correctness and performance. It is deliberately independent of individual applications.
 
+## Activity-aware FPGA power-analysis workflow (experimental)
+
+[Phase-separated SAIF power assessment — Vivado commands and evidence limits](docs/SAIF_POWER_WORKFLOW.md). In Vivado Tcl Console, from the repository root:
+
+```tcl
+source vivado/run_npu_power_saif.tcl
+set ::NPU_UART_XPR {C:/path/to/your/previous/build/uart_npu_project/uart_npu.xpr}
+source vivado/analyze_npu_saif_power.tcl
+```
+
+Then in PowerShell: `py scripts/summarize_saif_power.py --reports build/power_activity/reports`. The baseline routed Vivado UART/NPU vectorless estimate is **80 mW total, 18 mW dynamic, 62 mW static**, **Medium confidence**. The new SAIF flow has **not yet been executed in Vivado**; review matched/unmatched nets before comparing phases. This is not a measurement of board power.
+
 ## Industrial verification, reliability and power assessment
 
 [Consolidated measured verification report](docs/VERIFICATION_REPORT.md) · [Hardware endurance protocol](docs/RELIABILITY_TESTS.md) · [Power measurement instructions](docs/POWER_MEASUREMENT.md) · [Technical datasheet draft](docs/TECHNICAL_DATASHEET_DRAFT.md)
