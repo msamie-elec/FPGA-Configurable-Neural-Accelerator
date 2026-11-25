@@ -27,3 +27,13 @@ python3 host/reference_scalable.py build
 iverilog -g2012 -Wall -s tb_npu_scalable -o build/tb_npu_scalable.vvp \
     rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv tb/tb_npu_scalable.sv
 vvp build/tb_npu_scalable.vvp
+
+echo 'Testing UART model programming, inference and response framing ...'
+iverilog -g2012 -Wall -s tb_npu_uart_bridge -o build/tb_npu_uart_bridge.vvp \
+    rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv rtl/uart_8n1.sv \
+    rtl/npu_uart_bridge.sv tb/tb_npu_uart_bridge.sv
+vvp build/tb_npu_uart_bridge.vvp
+echo 'Elaborating integrated Arty A7 UART top ...'
+iverilog -g2012 -Wall -s arty_a7_uart_npu_top -o build/arty_a7_uart_npu_top.vvp \
+    rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv rtl/uart_8n1.sv \
+    rtl/npu_uart_bridge.sv rtl/arty_a7_uart_npu_top.sv
