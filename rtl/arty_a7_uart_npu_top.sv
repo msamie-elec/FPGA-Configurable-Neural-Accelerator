@@ -4,11 +4,11 @@ module arty_a7_uart_npu_top (
   input wire clk100,
   input wire uart_rx,
   output wire uart_tx,
-  input wire [1:0] btn,
+  input wire btn_reset,
   output wire [3:0] led
 );
   reg [1:0] reset_ff=2'b11;
-  always @(posedge clk100) reset_ff<={reset_ff[0],btn[1]};
+  always @(posedge clk100) reset_ff<={reset_ff[0],btn_reset};
   wire rst=reset_ff[1];
   wire busy;
   wire [2:0] predicted;
