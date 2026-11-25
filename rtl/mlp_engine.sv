@@ -32,7 +32,7 @@ module mlp_engine #(parameter integer LANES=4)(
   reg signed [31:0] accumulator,sum_products,raw_result,scaled;
   reg signed [7:0] quantized,best_value;
   reg [2:0] best_index;
-  integer k, widx;
+  integer k;
   initial begin
     if (LANES!=1 && LANES!=4 && LANES!=8)
       $error("LANES must be 1/4/8");
@@ -46,8 +46,7 @@ module mlp_engine #(parameter integer LANES=4)(
           activation[p]=act_a[group_idx*LANES+p];
         else
           activation[p]=act_b[group_idx*LANES+p];
-        widx=layer_idx*64+neuron_idx*8+(group_idx*LANES+p);
-        lane_weight[p]=weights[widx];
+        lane_weight[p]=weights[layer_idx*64+neuron_idx*8+(group_idx*LANES+p)];
       end
     end
     sum_products=accumulator;
