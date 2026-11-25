@@ -1,0 +1,21 @@
+{
+  "source": "User-uploaded Vivado report_power -file power_unannotated.rpt on 2026-11-25, routed arty_a7_uart_npu_top, Vivado 2025.2.1",
+  "design": "arty_a7_uart_npu_top",
+  "device": "xc7a35ticsg324-1L",
+  "clock_mhz": 100,
+  "total_on_chip_power_w": 0.08,
+  "dynamic_w": 0.018,
+  "device_static_w": 0.062,
+  "confidence": "Medium",
+  "simulation_activity_file": null,
+  "design_nets_matched": null,
+  "reported_ambient_c": 25,
+  "temperature_model_note": "Vivado thermal setting, not physical board thermometer",
+  "interpretation": "Tool vectorless estimated on-chip watts, not measured electrical board/FPGA power",
+  "limitations": [
+    "Unannotated internal switching",
+    "Assumed board thermal conditions",
+    "No independent metered power",
+    "No physical energy/inference"
+  ]
+}
