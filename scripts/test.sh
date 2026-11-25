@@ -58,3 +58,10 @@ python3 scripts/analyze_npu_performance.py \
     --input docs/results/arty_a7_benchmark_2026-11-25.json \
     --output build/performance
 python3 -m py_compile scripts/analyze_npu_performance.py
+
+echo 'Simulating self-contained packaged-IP consumer control and memory programming ...'
+iverilog -g2012 -Wall -DNPU_CONSUMER_SIM -s tb_ip_consumer_top \
+    -o build/tb_ip_consumer_top.vvp \
+    rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv \
+    rtl/npu_accelerator_ip.sv rtl/arty_a7_ip_consumer_top.sv tb/tb_ip_consumer_top.sv
+vvp build/tb_ip_consumer_top.vvp
