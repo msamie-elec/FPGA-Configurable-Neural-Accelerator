@@ -6,7 +6,7 @@ The previous Vivado 2025.2.1 **RTL-core SAIF → routed UART/NPU implementation*
 
 The improved experiment uses **one source-identical post-synthesis functional Verilog netlist and its matching Vivado synthesis checkpoint**, both produced by the same synthesis invocation. The netlist is simulated with the existing three-phase stimulus, and each SAIF is back-annotated onto the *matching* checkpoint. This should avoid most RTL-to-implementation signal-name mismatch; actual match rates must still be checked.
 
-**Crucial distinction:** this is a **core-only, post-synthesis, out-of-context** power estimate for XC7A35T at a 100 MHz specified clock. It is NOT the post-route power of the UART board top, a physical rail meter reading, a trained model, or a standalone measurement of FPGA board power. For board-level power, the existing routed UART report remains separately identified.
+**Crucial distinction:** this is a **core-only, post-synthesis, out-of-context** power estimate for XC7A35T at a 100 MHz specified clock. The device-static part of Vivado's report still describes the **full FPGA device**, not the static consumption uniquely attributable to the NPU. It is NOT the post-route power of the UART board top, a physical rail meter reading, a trained model, or a standalone measurement of FPGA board power. For board-level power, the existing routed UART report remains separately identified.
 
 ## One-command workflow (Vivado Tcl Console)
 
