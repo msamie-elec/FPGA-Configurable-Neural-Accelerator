@@ -33,11 +33,8 @@ class SaifPowerSummaryTests(unittest.TestCase):
     def test_missing_report_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             with self.assertRaises(FileNotFoundError):evaluate(folder)
-    def test_missing_total_rejected(self):
-        with self.assertRaises(ValueError):
-            d=Path("missing")
-            # Parse only: missing total is not guessed
-            self.assertIsNone(parse_power("no report")["total_on_chip_w"])
+    def test_missing_total_not_invented(self):
+        self.assertIsNone(parse_power("no report")["total_on_chip_w"])
 
 
 if __name__=="__main__":
