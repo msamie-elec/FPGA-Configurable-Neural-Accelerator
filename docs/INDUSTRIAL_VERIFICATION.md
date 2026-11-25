@@ -47,7 +47,7 @@ Acceptance thresholds for latency/throughput should be **requirements-driven**, 
 - Program a known deterministic weight/bias image. Run Python oracle comparisons of output bytes and class for each network.
 - Repeat UART communication after board reset, disconnect/reconnect, malformed frames, and runtime configuration switches.
 - Run soak tests (e.g. 1,000 or 10,000 inferences per model) with per-transaction CSV; demonstrate **zero mismatches** or document every fault.
-- Instrument firmware with a core-cycle counter or trigger and repeat after warming; sample inputs must be fixed and reproducible.
+- The integrated UART bridge now implements an optional FPGA dispatch-to-valid cycle counter, readable through UART command 0x54. **This new RTL has simulation coverage but is not yet physically tested, synthesised or routed.** Use `--fpga-cycles` only after rebuilding/programming the firmware and rechecking timing. Repeat after warming; sample inputs must be fixed and reproducible.
 
 ### Stage D — Performance and design-space evaluation
 
@@ -66,7 +66,7 @@ Benchmarking on the host now:
 py host/benchmark_npu.py --port COM4 --model all --count 100 --warmup 5
 ```
 
-Outputs `build/benchmarks/{small,medium,large}_transactions.csv` and `benchmark_summary.json`. These are system-level UART timings, **not** FPGA cycles.
+Outputs `build/benchmarks/{small,medium,large}_transactions.csv` and `benchmark_summary.json`. These are system-level UART timings, **not** FPGA cycles unless the optional new `--fpga-cycles` firmware telemetry mode is explicitly enabled.
 
 ## 3. Objective release-gate scorecard
 
@@ -78,7 +78,7 @@ Outputs `build/benchmarks/{small,medium,large}_transactions.csv` and `benchmark_
 | FPGA–host measured physical arithmetic | PASS for one medium-size example |
 | Automated 3-model hardware benchmark | TOOL PROVIDED; results not collected |
 | Long-running soak, reset/fault injection | NOT YET PERFORMED |
-| FPGA-only cycle latency counters | NOT YET IMPLEMENTED |
+| FPGA dispatch-to-valid cycle telemetry | RTL/host implementation and simulated UART packet available; physical measurement pending |
 | Hardware power instrumentation | NOT YET PERFORMED |
 | Product/production qualification | NOT CLAIMED |
 
