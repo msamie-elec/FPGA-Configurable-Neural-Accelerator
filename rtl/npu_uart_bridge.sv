@@ -5,6 +5,8 @@
 // C 0x43: layer_count,input_size,size0,size1,size2,size3,shift (7)
 // I 0x49: 32 signed INT8 input bytes (32)
 // P 0x50: empty payload (0)
+// T 0x54: empty payload, returns last FPGA dispatch-to-valid cycle count
+// in first four response score bytes (unsigned little endian).
 // Response: 5A CMD STATUS CLASS OUTPUT[0:7] XOR(CMD,STATUS,CLASS,OUTPUTS).
 // STATUS: 0=ok,1=checksum,2=bad_command,3=NPU_error.
 // Transaction-oriented: sender MUST await response before next request.
@@ -39,6 +41,8 @@ module npu_uart_bridge #(
   reg [7:0] response_cmd=0,response_status=0;
   reg [2:0] response_class=0;
   reg [63:0] response_scores=0;
+  reg [31:0] inference_cycle_counter=0;
+  reg [31:0] last_inference_cycles=0;
   reg [3:0] send_idx=0;
   reg [7:0] send_byte,send_checksum;
   integer k;
@@ -85,6 +89,7 @@ module npu_uart_bridge #(
       state<=RX;parse_state<=0;payload_len<=0;offset<=0;check_xor<=0;
       response_cmd<=0;response_status<=0;response_class<=0;
       response_scores<=0;send_idx<=0;
+      inference_cycle_counter<=0;last_inference_cycles<=0;
       tx_start<=0;tx_data<=0;
       start<=0;weight_we<=0;bias_we<=0;
       last_class<=0;result_seen<=0;
@@ -104,6 +109,7 @@ module npu_uart_bridge #(
                 8'h43:payload_len<=7;
                 8'h49:payload_len<=32;
                 8'h50:payload_len<=0;
+                8'h54:payload_len<=0;
                 default:payload_len<=0;
               endcase
               parse_state<=2;
@@ -139,11 +145,15 @@ module npu_uart_bridge #(
                       quant_shift<=payload[6][3:0];
                     end
                     8'h49:begin
+                      inference_cycle_counter<=0;
                       for(k=0;k<32;k=k+1)
                         features[k*8+:8]<=payload[k];
                       start<=1;
                     end
                     8'h50:begin end
+                    8'h54:begin
+                      response_scores<={32'd0,last_inference_cycles};
+                    end
                     default:response_status<=2;
                   endcase
                 end
@@ -155,11 +165,14 @@ module npu_uart_bridge #(
           endcase
         end
         WAIT_CORE:if(valid) begin
+          last_inference_cycles<=inference_cycle_counter;
           response_status<=error?8'd3:8'd0;
           response_class<=predicted_class;
           response_scores<=scores;
           last_class<=predicted_class;result_seen<=!error;
           state<=RESP_SEND;
+        end else begin
+          inference_cycle_counter<=inference_cycle_counter+1'b1;
         end
         RESP_SEND:if(!tx_busy) begin
           tx_data<=send_byte;tx_start<=1;state<=RESP_BUSY;
