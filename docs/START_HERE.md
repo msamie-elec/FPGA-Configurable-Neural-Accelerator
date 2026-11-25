@@ -173,6 +173,16 @@ Search the IP Catalog for `npu_accelerator_ip`. Connect the defined synchronous 
 
 See [IP integration/port contract](IP_INTEGRATION.md) for widths, addresses and operational limitations. Source-driven verification: `bash scripts/test.sh`.
 
+## Extended physical reliability and power checks
+
+Close the GUI, program **Track A UART/NPU** firmware, then run:
+
+```powershell
+py host/reliability_campaign.py --port COM4 --model all --count 1000 --reload-every 250 --output build/reliability
+```
+
+The tool preserves every comparison and records aborted UART transactions; hardware reset or malformed-wire injection is **not** included. See [reliability protocol](RELIABILITY_TESTS.md), [power measurement instructions](POWER_MEASUREMENT.md) and [consolidated verification report](VERIFICATION_REPORT.md).
+
 ## Common troubleshooting
 
 | Symptom | Likely cause / action |
