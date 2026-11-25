@@ -1,22 +1,20 @@
-# Rebuild roadmap
+# FPGA accelerator industrial-completion roadmap
 
-The purpose is a reusable FPGA accelerator IP for Edge AI inference, with a sensor-monitoring GUI as an illustrative application, not a sensor-specific architecture.
+This repository focuses **exclusively on reusable neural-network inference hardware and verification**.
 
-| Gate | Deliverable | Evidence |
-| --- | --- | --- |
-| 0 (this commit) | One RTL location, simple 4→2 INT8 core, testbench, A7 board top, Vivado build | CI regression, subsequent user Vivado logs |
-| 1 | Board-verified 100 MHz baseline, switch/LED demonstration, resource report | Bitstream, timing summary, board test record |
-| 2 | INT8 multi-lane MAC (1/4/8), registered pipeline, fixed-point activation/requantise | Randomised bit-exact tests vs Python |
-| 3 | V0.3 scalable 32-wide MLP, banked synchronous weight storage and RTL model loading | CI simulation (4→8→4→2, 8→16→8→2, 32→32→32→32→8); Vivado BRAM mapping pending |
-| 4 | UART packet protocol, checksums/timeouts, 32-wide board integration and routing | End-to-end stress and malformed-packet tests |
-| 5 | Python GUI with adjustable sensor values (mouse/keyboard arrows), plots and diagnostics | Demo recording, PC↔FPGA comparisons |
-| 6 | Benchmark and portfolio release | Verified latency, throughput, DSP/BRAM/LUT/FF, timing/power reports; concise reproducible instructions |
+| Stage | Evidence required | Current |
+|---|---|---|
+| A. Numeric oracle | Signed INT8 reference agreement for small/medium/large MLP | PASS directed+deterministic RTL simulation |
+| B. Architecture resources | 8 MAC lanes, banked BRAM, routed 100 MHz timing and DSP counts | PASS one Vivado build (LUT 1235, FF 1581, RAMB18 8, DSP 12, WNS +1.437 ns) |
+| C. Serial FPGA demonstration | Real USB-UART programming and valid bit-exact inference | PASS one medium-sized network case |
+| D. Hardware benchmark | Three network sizes, 100+ transactions each, per-case CSV and percentiles | BENCHMARK TOOL ADDED; real run pending |
+| E. Reliability | Randomized long-run 1,000+ operations, malformed commands and reset/recovery | Pending |
+| F. Core-cycle timing | FPGA cycle counter, core-only latency and effective GOPS | Pending |
+| G. Power methodology | Vivado estimate separated from measured power and energy | Pending |
+| H. Portfolio release | Evidence table, architecture, screenshots, limitations, clean clone/rebuild | In progress |
 
-### Engineering policies
+Rebuild: `source vivado/create_uart_npu_project.tcl` or `source vivado/build_uart_npu.tcl`.
+Regression: `bash scripts/test.sh`.
+Board benchmark: `py host/benchmark_npu.py --port COM4 --model all --count 100`.
 
-- Exactly one authoritative file per RTL module; no duplicated source trees.
-- Vivado project outputs only under ignored `build/`. Recreate them from scripts.
-- Use explicitly versioned interfaces; any architecture change must update tests.
-- No empty folders or placeholder READMEs.
-- CI checks all committed RTL with an executable test before claims of success.
-- Keep the archived implementation for comparison only; do not import unreviewed modules into the new code.
+See [industrial verification](INDUSTRIAL_VERIFICATION.md) and [release acceptance](RELEASE_ACCEPTANCE.md).
