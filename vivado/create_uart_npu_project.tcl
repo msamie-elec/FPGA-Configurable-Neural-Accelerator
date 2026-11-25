@@ -19,6 +19,7 @@ add_files -fileset sim_1 [file join $root tb tb_npu_uart_bridge.sv]
 set_property file_type SystemVerilog [get_files [file join $root tb tb_npu_uart_bridge.sv]]
 set_property top tb_npu_uart_bridge [get_filesets sim_1]
 set_property top arty_a7_uart_npu_top [get_filesets sources_1]
+set_property STEPS.WRITE_BITSTREAM.TCL.POST [file join $root vivado post_write_gui_bitstream.tcl] [get_runs impl_1]
 update_compile_order -fileset sources_1
 close_project
 puts "Open GUI project: [file join $project_dir uart_npu.xpr]"
