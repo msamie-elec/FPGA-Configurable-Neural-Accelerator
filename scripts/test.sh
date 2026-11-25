@@ -65,3 +65,12 @@ iverilog -g2012 -Wall -DNPU_CONSUMER_SIM -s tb_ip_consumer_top \
     rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv \
     rtl/npu_accelerator_ip.sv rtl/arty_a7_ip_consumer_top.sv tb/tb_ip_consumer_top.sv
 vvp build/tb_ip_consumer_top.vvp
+
+echo 'UART robustness: corrupt writes, illegal commands/topology and parser reset ...'
+iverilog -g2012 -Wall -s tb_npu_uart_robustness -o build/tb_npu_uart_robustness.vvp \
+    rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv rtl/uart_8n1.sv \
+    rtl/npu_uart_bridge.sv tb/tb_npu_uart_robustness.sv
+vvp build/tb_npu_uart_robustness.vvp
+
+echo 'Checking endurance runner and measured-power analyser syntax ...'
+python3 -m py_compile host/reliability_campaign.py scripts/assess_power.py
