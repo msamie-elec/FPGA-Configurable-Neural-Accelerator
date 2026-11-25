@@ -74,9 +74,7 @@ module npu_scalable_core (
       2: requested_width=size2;
       default: requested_width=size3;
     endcase
-    weighted_sum = acc + {{12{sums_b[0][19]}},sums_b[0]}
-                        + {{12{sums_b[1][19]}},sums_b[1]}
-                        + biases[{layer_idx[1:0],5'b0}+neuron_idx];
+    weighted_sum = acc + biases[{layer_idx[1:0],5'b0}+neuron_idx];
     shifted_sum = weighted_sum >>> shift_q;
     if (shifted_sum>127) clipped=8'sd127;
     else if (shifted_sum< -128) clipped=-8'sd128;
