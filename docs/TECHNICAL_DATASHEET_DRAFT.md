@@ -78,3 +78,8 @@ The authoritative evidence review and scope are documented in [Verification Repo
 ## Activity-aware power characterization (pending Vivado validation)
 
 The 25-Nov-2026 routed UART/NPU tool-estimated baseline is **80 mW on-chip** (18 mW dynamic / 62 mW static) with **Medium** confidence and no SAIF. A new experimental three-window RTL SAIF workflow for idle, model loading and sustained compute has been added. It has **not yet produced verified annotated Vivado reports**. The design's physical watts, joules per inference and measured GOPS/W remain unknown. See [three-phase power evaluation](SAIF_POWER_WORKFLOW.md).
+
+
+## Netlist-activity power verification — in progress
+
+An additional **matched post-synthesis core-only** SAIF workflow has been added to improve upon the earlier 99/3,664 RTL-to-routed match. It runs a structural functional Verilog netlist against a matching synthesis checkpoint, and intentionally does not equate core OOC power with routed UART/FPGA board power. **No successful Vivado netlist simulation, matched annotation or physically measured energy figure has yet been returned.** See [Netlist Power Workflow](NETLIST_POWER_WORKFLOW.md).
