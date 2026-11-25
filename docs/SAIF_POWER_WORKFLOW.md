@@ -1,6 +1,6 @@
 # Three-phase SAIF activity-aware power evaluation (experimental)
 
-This is the next step after the routed **80 mW vectorless** Vivado result. It is an engineering *estimate refinement*, NOT a physical power measurement, and the Tcl/XSim flow **has not yet been executed on Windows Vivado 2025.2.1**.
+This is the next step after the routed **80 mW vectorless** Vivado result. It is an engineering *estimate refinement*, NOT a physical power measurement, and the phase-specific XSim generation **has been verified in Vivado 2025.2.1**, while net matching remains poor (~3% in the initial annotation).
 
 ## Scope
 
@@ -19,7 +19,7 @@ The XSim script uses `$stop` simulation markers to start and end each SAIF windo
 Download updated `main` and enter its repository root, e.g.:
 
 ```tcl
-cd {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/FPGA-NN-Accelerator-IP-6}
+cd {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/FPGA-NN-Accelerator-IP-7}
 source vivado/run_npu_power_saif.tcl
 ```
 
@@ -37,10 +37,9 @@ If XSim pauses on a `$stop` marker unexpectedly, check the simulator Tcl Console
 
 ## Stage B — annotate the *existing routed* UART/NPU netlist
 
-You previously built the UART demo in **`FPGA-NN-Accelerator-9`**. The new source checkout may have no routed UART project of its own. Set the full path to the actual existing project before running the annotation script:
+The current checkout already contains a freshly routed UART/NPU project. The script uses it by default; do not refer to older numbered folders:
 
 ```tcl
-set ::NPU_UART_XPR {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/FPGA-NN-Accelerator-9/build/uart_npu_project/uart_npu.xpr}
 source vivado/analyze_npu_saif_power.tcl
 ```
 
@@ -54,7 +53,6 @@ build/power_activity/reports/power_idle_saif.rpt
 build/power_activity/reports/power_loading_saif.rpt
 build/power_activity/reports/power_inference_saif.rpt
 build/power_activity/reports/{idle,loading,inference}_unmatched.txt
-build/power_activity/reports/activity_{idle,loading,inference}.rpt
 ```
 
 **Important:** There may be substantial unmatched nets because RTL is transformed at synthesis. Inspect `Design Nets Matched`, `Confidence Level`, unmatched counts and whether useful core state/data registers were annotated. If matching is poor, we must improve hierarchy mapping or use a post-implementation simulation netlist rather than interpreting the estimates as high-confidence.
@@ -101,7 +99,7 @@ Until the three power reports actually exist, `summarize_saif_power.py` correctl
 With the **routed UART/NPU design already open** (`open_run impl_1`), set `power_dir` to the directory containing the three valid SAIF files:
 
 ```tcl
-set power_dir {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/FPGA-NN-Accelerator-IP-6/build/power_activity}
+set power_dir {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/FPGA-NN-Accelerator-IP-7/build/power_activity}
 set reports [file join $power_dir reports]
 file mkdir $reports
 puts "Project top: [get_property TOP [get_filesets sources_1]]"
@@ -116,3 +114,10 @@ foreach phase {idle loading inference} {
 ```
 
 This is a workaround, not a claim that the signal mapping succeeded. Open each `*_unmatched.txt` and inspect coverage/confidence before interpreting power figures. Run the PowerShell summary after all reports are written.
+
+
+## Recovered from actual Vivado 2025.2.1 error
+
+In the first complete user run, the Arty A7 UART/NPU bitstream built successfully at 100 MHz (setup WNS **+1.588 ns**, hold WHS **+0.022 ns**) and all three SAIF files were generated. The first phase annotated **99/3,664** routed nets. The previous Tcl script then failed on a bare `report_switching_activity` call: **[Vivado 12-1004] Please provide a list of objects.** This prevented the loading/inference reports, and Python correctly reported missing files.
+
+The corrected script omits that optional, invalid diagnostic and verifies the four required reports. **Re-running just `source vivado/analyze_npu_saif_power.tcl` on the same checkout is sufficient; neither the FPGA bitstream nor SAIF needs rebuilding.** Mapping coverage of only ~3% still limits the credibility of the phase-specific power estimates; this script fix does not solve that fundamental problem.
