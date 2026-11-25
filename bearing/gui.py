@@ -76,7 +76,13 @@ class BearingGUI(tk.Tk):
             ttk.Label(row,text=name.replace("_"," "),width=32).pack(side="left")
             value=tk.StringVar(value="0")
             self.values.append(value)
-            ttk.Entry(row,textvariable=value,width=16).pack(side="left",padx=6)
+            spin=ttk.Spinbox(row,textvariable=value,width=14,from_=-1e9,to=1e9,increment=1.0)
+            spin.pack(side="left",padx=6)
+            slider=ttk.Scale(row,from_=-100,to=100,orient="horizontal",
+                command=lambda val,idx=i:self._slider_changed(idx,val))
+            slider.pack(side="left",fill="x",expand=True,padx=8)
+            value.trace_add("write",lambda *_a,idx=i:self._field_changed(idx))
+            self.controls.append((spin,slider))
         action=ttk.Frame(frame)
         action.pack(fill="x",pady=(12,6))
         ttk.Label(action,text="Arty A7 COM port").pack(side="left")
@@ -90,6 +96,24 @@ class BearingGUI(tk.Tk):
         ttk.Button(action,text="Python reference only",command=self._preview).pack(side="left",padx=6)
         ttk.Label(frame,textvariable=self.status,wraplength=1000).pack(anchor="w",pady=(8,2))
         ttk.Label(frame,textvariable=self.result,font=("Segoe UI",12,"bold"),wraplength=1000).pack(anchor="w",pady=7)
+
+    def _slider_changed(self,idx,raw):
+        try:
+            value=float(raw)
+            current=float(self.values[idx].get())
+            if abs(value-current)>max(1e-6,abs(value)*1e-6):
+                self.values[idx].set(f"{value:.6g}")
+        except (ValueError,tk.TclError):
+            pass
+
+    def _field_changed(self,idx):
+        try:
+            val=float(self.values[idx].get())
+            slider=self.controls[idx][1]
+            if abs(slider.get()-val)>max(1e-6,abs(val)*1e-6):
+                slider.set(val)
+        except (ValueError,tk.TclError,IndexError):
+            pass
 
     def _pick_model(self):
         path=filedialog.askopenfilename(filetypes=[("Model manifest","*.json")])
@@ -111,6 +135,13 @@ class BearingGUI(tk.Tk):
             if any(r["bearing_id"] not in held for r in examples):
                 raise ValueError("One or more examples do not belong to held-out bearings")
             self.model=model
+            for i,(spin,slider) in enumerate(self.controls):
+                mid=float(model["feature_center"][i])
+                spread=max(float(model["feature_scale"][i]),1e-9)
+                low=mid-6*spread
+                high=mid+6*spread
+                slider.configure(from_=low,to=high)
+                spin.configure(from_=low,to=high,increment=spread/20.0)
             self.loaded=False
             self.examples=examples
             names=[]
@@ -145,7 +176,11 @@ class BearingGUI(tk.Tk):
         try:
             q,output,pred=reference_prediction(self._measurements(),self.model)
             meaning=self.model["classes"][pred]
-            truth=("(record label: "+("Healthy" if self.active["class_id"]=="0" else "Damaged")+")") if self.active else ""
+            unchanged=(self.active is not None and all(
+                abs(float(self.active[name])-float(val.get()))<1e-9
+                for name,val in zip(FEATURE_NAMES,self.values)))
+            truth=(("(measured record label: "+("Healthy" if self.active["class_id"]=="0" else "Damaged")+")")
+                   if unchanged else "(hypothetical edited measurements; no ground-truth label)")
             self.result.set(f"Python fixed-point model → {meaning} {truth} | scores {output} | INT8 features {q}")
         except Exception as exc:
             messagebox.showerror("Reference model",str(exc))
@@ -206,7 +241,11 @@ class BearingGUI(tk.Tk):
         def done(answer):
             matches=tuple(golden)==answer.scores[:2] and pred==answer.class_index
             label=self.model["classes"][answer.class_index]
-            self.result.set(f"FPGA: {label} | FPGA scores {answer.scores[:2]} | "
+            unchanged=(self.active is not None and all(
+                abs(float(self.active[name])-float(val.get()))<1e-9
+                for name,val in zip(FEATURE_NAMES,self.values)))
+            origin="Measured held-out record" if unchanged else "Edited hypothetical features"
+            self.result.set(f"{origin} | FPGA: {label} | FPGA scores {answer.scores[:2]} | "
                             f"Python scores {golden} | "
                             +("BIT-EXACT MATCH" if matches else "MISMATCH — do not rely on prediction"))
         self._background(lambda:self.board.infer(q),done)
