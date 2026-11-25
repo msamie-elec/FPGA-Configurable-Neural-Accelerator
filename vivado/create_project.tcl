@@ -10,5 +10,5 @@ foreach src $srcs { set_property file_type SystemVerilog [get_files $src] }
 add_files -fileset constrs_1 [file join $root constraints arty_a7_35t.xdc]
 set_property top arty_a7_top [get_filesets sources_1]
 update_compile_order -fileset sources_1
-save_project
+close_project
 puts "Vivado project created: [file join $project_dir neural_accelerator.xpr]"
