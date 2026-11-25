@@ -52,7 +52,7 @@ class TransportTest(unittest.TestCase):
                          [PING,WEIGHT,BIAS,CONFIGURE,INFER])
         self.assertEqual(len(io.requests[-1]),35)
         self.assertEqual(io.requests[1][2:5],bytes([255,15,128]))
-        self.assertEqual(io.requests[2][2:],bytes([127])+(-123456).to_bytes(4,"little",signed=True)+bytes([0x42 ^ 127 ^ *([])])) if False else None
+        self.assertEqual(io.requests[2][2:7], bytes([127]) + (-123456).to_bytes(4,"little",signed=True))
 
     def test_bad_checksum_rejected(self):
         raw=bytes([0x5A, PING, 0, 0]+[0]*8+[0])
@@ -71,7 +71,7 @@ class TransportTest(unittest.TestCase):
 
     def test_input_bounds(self):
         with self.assertRaises(ValueError):
-            pack_request(INFER,bytes(33)) if False else NpuBoard(MockSerial()).infer([128])
+            NpuBoard(MockSerial()).infer([128])
 
 
 if __name__=="__main__":
