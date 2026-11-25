@@ -1,6 +1,6 @@
 # Model portability, quantisation and binary-interface contract
 
-**This document defines a proposed V1 contract; exact byte offsets, opcodes, CRC coverage and version fields must be frozen in M0 and checked against golden test vectors before releasing code.**
+**Updated 25 November 2026:** Exact byte offsets, opcodes, image structure, CRC coverage and signed arithmetic rules have now been specified in [V1_PROTOCOL_AND_MODEL_IMAGE.md](V1_PROTOCOL_AND_MODEL_IMAGE.md). **That newer document is normative.** The JSON and command-name material below illustrates the *concept*, not a wire format. The format still requires implementation and golden byte-level testing.
 
 ## 1. Model sources and training
 

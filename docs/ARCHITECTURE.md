@@ -1,6 +1,6 @@
 # Architecture specification — application-independent FPGA NPU-style subsystem
 
-**Status:** Proposed architecture; module names and data contracts to be frozen in M0 before RTL implementation.
+**Status:** conceptual system-context page. For **authoritative V1 RTL module names, memory sizes, dataflow, ports and protocol**, use [RTL_SYSTEM_DESIGN_V1.md](RTL_SYSTEM_DESIGN_V1.md), [RTL_MODULE_CONTRACTS_V1.md](RTL_MODULE_CONTRACTS_V1.md) and [V1_PROTOCOL_AND_MODEL_IMAGE.md](V1_PROTOCOL_AND_MODEL_IMAGE.md). This page is an earlier conceptual overview and may use less precise block names. **V1 is designed but not yet implemented.**
 
 ## 1. System boundary: what lives where
 

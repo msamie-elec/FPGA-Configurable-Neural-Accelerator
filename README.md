@@ -57,6 +57,17 @@ flowchart LR
 | M6 | Compatible trained-model proof and publishable engineering case study | Document source/provenance, accuracy, bit-exact FPGA outputs and tested configuration |
 | M7+ | Additional operators, AXI interfaces, compiler improvements | Each extension has its own verification and acceptance gate |
 
+## Detailed RTL design — architecture before diagrams
+
+The design has now been specified to module and memory-port level. **It is a proposed V1 FPGA microarchitecture, not implemented or physically verified hardware yet.** Final diagrams will be prepared only after the interface hierarchy and RTL correspond.
+
+- [Full RTL system design and physical hierarchy](docs/RTL_SYSTEM_DESIGN_V1.md)
+- [Module-level contracts, PE hierarchy and timing](docs/RTL_MODULE_CONTRACTS_V1.md)
+- [Exact model-image format, UART protocol and fixed-point math](docs/V1_PROTOCOL_AND_MODEL_IMAGE.md)
+- [Architecture decisions, explicit limitations and verification risks](docs/ARCHITECTURE_DECISIONS.md)
+
+V1 is a **1D 1/4/8-lane parallel PE vector**, with banked/packed memory and a runtime-loadable dense network. It is **not** a 2D systolic array; no external AXI/DDR DMA or application-specific feature extraction is included in the FPGA.
+
 ## Engineering documentation
 
 - [Project charter and acceptance criteria](docs/PROJECT_CHARTER.md)
