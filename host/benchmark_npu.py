@@ -57,7 +57,7 @@ def percentile(values, q: float):
     return xs[left] * (right-index) + xs[right] * (index-left)
 
 
-def benchmark_one(board, model_name: str, count: int, warmup: int, seed: int):
+def benchmark_one(board, model_name: str, count: int, warmup: int, seed: int, capture_cycles: bool=False):
     inputs, widths = MODELS[model_name]
     t_load = time.perf_counter_ns()
     board.load_demo_model(inputs, widths)
@@ -70,6 +70,7 @@ def benchmark_one(board, model_name: str, count: int, warmup: int, seed: int):
         begin = time.perf_counter_ns()
         got = board.infer(sample)
         elapsed_ms = (time.perf_counter_ns() - begin) / 1e6
+        core_cycles = board.read_cycle_count() if capture_cycles else None
         actual_scores = tuple(int(x) for x in got.scores[:widths[-1]])
         expected_scores = tuple(reference_scores)
         passed = (actual_scores == expected_scores and got.class_index == reference_class)
@@ -79,9 +80,12 @@ def benchmark_one(board, model_name: str, count: int, warmup: int, seed: int):
             "actual_scores": json.dumps(actual_scores),
             "expected_class": reference_class, "actual_class": got.class_index,
             "match": int(passed), "uart_transaction_ms": round(elapsed_ms, 6),
+            "fpga_dispatch_to_valid_cycles": core_cycles,
         })
     latencies = [r["uart_transaction_ms"] for r in rows]
     failures = sum(not r["match"] for r in rows)
+    counts = [r["fpga_dispatch_to_valid_cycles"] for r in rows if r["fpga_dispatch_to_valid_cycles"] is not None]
+    macs = sum(a*b for a,b in zip((inputs,)+widths[:-1], widths))
     metrics = {
         "model": model_name, "topology": [inputs, *widths],
         "count": len(rows), "warmup": warmup, "seed": seed,
@@ -93,8 +97,16 @@ def benchmark_one(board, model_name: str, count: int, warmup: int, seed: int):
             "p99": percentile(latencies, 99), "max": max(latencies),
         },
         "observed_single_stream_transactions_per_s": 1000/statistics.fmean(latencies),
-        "fpga_compute_latency_cycles": None,
-        "fpga_compute_latency_note": "Not instrumented; UART time includes transfers and Python/OS overhead",
+        "logical_mac_operations_per_inference": macs,
+        "fpga_dispatch_to_valid_cycles": {
+            "mean": statistics.fmean(counts), "min": min(counts),
+            "p50": percentile(counts,50), "p95": percentile(counts,95),
+            "max": max(counts),
+        } if counts else None,
+        "estimated_dispatch_to_valid_us_at_100MHz": statistics.fmean(counts)/100 if counts else None,
+        "effective_gops_at_100MHz": (2*macs*100_000_000/statistics.fmean(counts)/1e9)
+            if counts else None,
+        "fpga_cycles_note": "FPGA cycles counted from UART command dispatch until core valid; may include handshake overhead. Only available with telemetry-enabled firmware; excludes USB-UART transfer.",
     }
     return metrics, rows
 
@@ -106,6 +118,8 @@ def main():
     parser.add_argument("--count",type=int,default=100)
     parser.add_argument("--warmup",type=int,default=5)
     parser.add_argument("--seed",type=int,default=20261125)
+    parser.add_argument("--fpga-cycles",action="store_true",
+        help="Query 0x54 after every inference; requires telemetry-enabled FPGA bitstream")
     parser.add_argument("--output",type=Path,default=Path("build/benchmarks"))
     args=parser.parse_args()
     if args.count<1 or args.warmup<0:
@@ -125,7 +139,7 @@ def main():
         board.ping()
         for name in chosen:
             print(f"Running {name}: {args.count} samples after {args.warmup} warmup")
-            metrics,rows=benchmark_one(board,name,args.count,args.warmup,args.seed)
+            metrics,rows=benchmark_one(board,name,args.count,args.warmup,args.seed,args.fpga_cycles)
             report["results"][name]=metrics
             with (args.output/f"{name}_transactions.csv").open("w",newline="",encoding="utf-8") as f:
                 writer=csv.DictWriter(f,fieldnames=list(rows[0]))
