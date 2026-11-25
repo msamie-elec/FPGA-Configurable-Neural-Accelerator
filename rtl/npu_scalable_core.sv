@@ -38,7 +38,7 @@ module npu_scalable_core (
   wire signed [7:0] read_weights[0:7];
   wire [8:0] weight_read_row = {layer_idx[1:0],7'b0}
       + {neuron_idx[4:0],2'b0} + {7'b0,group_idx};
-  reg signed [15:0] products[0:7];
+  (* use_dsp = "yes" *) reg signed [15:0] products[0:7];
   reg signed [17:0] sums_a[0:3];
   reg signed [19:0] sums_b[0:1];
   reg signed [31:0] acc;
