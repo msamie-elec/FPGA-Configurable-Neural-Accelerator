@@ -16,8 +16,11 @@ class FakeBoard:
     def __init__(self, corrupt=False):
         self.corrupt=corrupt
         self.config=None
+        self.last_cycles=250
     def load_demo_model(self, inputs, widths):
         self.config=(inputs,widths)
+    def read_cycle_count(self):
+        return self.last_cycles
     def infer(self, sample):
         class Response:
             pass
@@ -44,7 +47,12 @@ class BenchmarkTests(unittest.TestCase):
             self.assertEqual(result["mismatches"],0)
             self.assertEqual(result["passes"],12)
             self.assertEqual(len(rows),12)
-            self.assertIsNone(result["fpga_compute_latency_cycles"])
+            self.assertIsNone(result["fpga_dispatch_to_valid_cycles"])
+            timed, timed_rows=benchmark_one(FakeBoard(),name,6,0,42,capture_cycles=True)
+            self.assertEqual(timed["fpga_dispatch_to_valid_cycles"]["mean"],250)
+            self.assertEqual(timed["fpga_dispatch_to_valid_cycles"]["p50"],250)
+            self.assertEqual(timed["estimated_dispatch_to_valid_us_at_100MHz"],2.5)
+            self.assertEqual(len(timed_rows),6)
     def test_mismatch_is_not_suppressed(self):
         result,_=benchmark_one(FakeBoard(corrupt=True),"small",6,0,42)
         self.assertEqual(result["mismatches"],6)
