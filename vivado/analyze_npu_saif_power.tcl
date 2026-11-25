@@ -22,10 +22,16 @@ catch {close_project}
 open_project $::NPU_UART_XPR
 if {[llength [get_runs impl_1]]==0} {error "Implementation run impl_1 missing in $::NPU_UART_XPR"}
 open_run impl_1
-set top [current_design]
-if {$top ne "arty_a7_uart_npu_top"} {
-  error "Expected routed UART/NPU board top arty_a7_uart_npu_top, got $top"
+# current_design is an implementation *design object name*, NOT necessarily
+# the RTL top name. Vivado may report a checkpoint/design name such as "stop".
+# For the RTL top use the source fileset's TOP property instead.
+set project_top [get_property TOP [get_filesets sources_1]]
+if {$project_top ne "arty_a7_uart_npu_top"} {
+  error "Expected project top arty_a7_uart_npu_top, got $project_top"
 }
+puts "POWER SOURCE PROJECT TOP: $project_top"
+puts "POWER LOADED IMPLEMENTATION: [current_design]"
+puts "POWER IMPLEMENTATION RUN STATUS: [get_property STATUS [get_runs impl_1]]"
 # Baseline: Vivado vectorless estimate. SAIF imports are intentionally separate.
 reset_switching_activity -all
 report_power -file [file join $reports power_vectorless.rpt]
