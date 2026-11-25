@@ -1,118 +1,114 @@
 # FPGA Configurable Neural Accelerator
 
-## V1.0 candidate: reusable Vivado Catalog IP + measured performance datasheet
+**Reusable INT8 multilayer-neural-network FPGA IP + fully working Arty A7 UART/GUI benchmark demonstrator.**
 
-### Independent IP consumer: automated Vivado post-route qualification
+<small>Reference target: Digilent Arty A7-35T (Artix-7 XC7A35T-1L), Vivado 2025.2.1, 100 MHz.</small>
 
-A new independent board-level consumer uses the **actual packaged `npu0` IP**, programs all supported weight and bias memory locations, runs the maximum MLP workload, and captures routed 100 MHz setup/hold timing, resource utilisation, DRC, methodology and power estimates. Run `source vivado/package_npu_ip.tcl` then `source vivado/build_ip_consumer_impl.tcl` in Vivado. All results are saved under `build/ip_consumer_implementation/reports/`. This scripted physical implementation is **pending user Vivado execution**; CI checks the consumer controller in simulation. [Full independent IP consumer verification guide](docs/IP_CONSUMER_IMPLEMENTATION.md).
+## Choose what you want to run
 
+| | **A. Complete FPGA demo — build, program and benchmark** | **B. Reusable IP — package, integrate and assess** |
+|---|---|---|
+| Purpose | Test model loading, GUI, UART, inference and physical speed | Reuse NPU in another FPGA design and measure routed resources |
+| Top-level module | `arty_a7_uart_npu_top` | `npu_accelerator_ip` (example consumer `arty_a7_ip_consumer_top`) |
+| Vivado entry point | `vivado/create_uart_npu_project.tcl` | `vivado/package_npu_ip.tcl` |
+| Programming bitstream | **`build/bitstream/arty_a7_uart_npu.bit`** | Different internal consumer `.bit`, **no UART** |
+| Python GUI/benchmark | **Yes** | **No** |
 
-The reusable application-independent **`npu_accelerator_ip`** wrapper exposes synchronous model loading, topology, data, result and handshake ports without Arty-specific UART/GPIO. The standalone wrapper is simulation-verified with the same 48 independent Python-golden cases as the core. A script builds a Vivado IP-XACT catalog component; actual Vivado catalog packaging remains pending hardware-tool validation.
+**[START HERE — complete build, bitstream selection, commands and troubleshooting](docs/START_HERE.md)**
 
-[IP integration and Vivado packaging guide](docs/IP_INTEGRATION.md) · [Engineering draft technical datasheet](docs/TECHNICAL_DATASHEET_DRAFT.md) · [Reproducible measured benchmark evidence](docs/results/arty_a7_benchmark_2026-11-25.json)
+The most common user error is trying `host/benchmark_npu.py` after programming `arty_a7_ip_consumer_top.bit`. That standalone IP demonstration has no UART receiver and will not answer serial requests. **For all Python GUI/benchmark tests, program `build/bitstream/arty_a7_uart_npu.bit`.**
 
-The **25 November 2026 hardware benchmark** passed **300/300** bit-exact inferences on Arty A7. Recorded FPGA dispatch-to-valid latencies were **1.14 µs, 2.50 µs and 23.94 µs** for 72, 272 and 3,328 MAC networks, yielding calculated effective core throughput **0.126, 0.218 and 0.278 GOPS**. UART transaction latency remains approximately 15–16 ms, substantially slower than FPGA execution. These are independent observations and should never be conflated.
+## Quick start: full UART/NPU board
 
-Generate the comparison CSV and Markdown report with:
-
-```bash
-python3 scripts/analyze_npu_performance.py --input docs/results/arty_a7_benchmark_2026-11-25.json --output build/performance
-```
-
-To package the **RTL as a reusable Vivado IP**, in Vivado Tcl Console:
-
-```tcl
-source vivado/package_npu_ip.tcl
-source vivado/check_npu_ip_catalog.tcl
-```
-
-*Vivado 2025.2.1 first-run IP-XACT packaging and catalog discovery have now passed. The revised Verilog-compatible wrapper/clock metadata and independent consumer creation script still require validation. Run `source vivado/check_npu_ip_consumer.tcl` after packaging.*
-
----
-
-
-**Reusable, application-independent INT8 neural-network accelerator IP** targeting the Digilent **Arty A7-35T (XC7A35T-1L)**. This repository is dedicated to **RTL architecture, correctness, FPGA implementation, interface verification and reproducible performance assessment**.
-
-## Overview
-
-| Feature | Implementation |
-|---|---|
-| Model format | Runtime-configurable dense multilayer neural network (MLP) |
-| Maximum topology | 32 inputs → 32 → 32 → 32 → 8 outputs |
-| Computational neurons / weights at maximum | 104 / 3,328 |
-| Arithmetic | Signed INT8 weights/activations, INT32 accumulated products/bias |
-| Physical compute | Eight reused multiplier lanes and pipelined reduction/activation |
-| Weight memory | Eight synchronous RAM banks, mapped to RAMB18 in prior Vivado implementation |
-| Host protocol | 115200 baud USB-UART with command/reply and XOR detection |
-| PC tool | Interactive Tkinter input GUI, reference model and board-level benchmark |
-| FPGA | Arty A7-35T with 100 MHz oscillator |
-
-This is an **inference engine**, not a neural-network trainer. The shipped test weights are deterministic arithmetic test fixtures; they do not imply classification accuracy. The host can update supported topology, INT8 weights, INT32 biases and inputs at runtime without rebuilding the bitstream.
-
-## Verification evidence so far
-
-- Automated Python-reference vs RTL simulations for **4→8→4→2**, **8→16→8→2** and **32→32→32→32→8**, with directed and seeded input vectors.
-- UART bit-level simulation covers framed packets, weight/bias/model configuration, inference, checksum rejection and reply. CI tests also check Python protocol and source hierarchy.
-- **User-reported physical Arty A7 smoke test:** PC UART ping, 272-weight load and one **8→16→8→2** inference matching Python scores and class.
-- **User-provided routed Vivado implementation reports:** setup slack **+1.437 ns** at 100 MHz, hold slack **+0.036 ns**, **0 failing setup/hold endpoints**; **1,235 LUT**, **1,581 FF**, **8 RAMB18**, **12 DSP48E1**. These are measurements/reports from one build, not a guarantee for other placements or variants.
-- Remaining methodology advisories for DSP and RAM pipelining plus unconstrained asynchronous/signal-display I/O require review; physical power has not been measured.
-
-See [industrial verification plan](docs/INDUSTRIAL_VERIFICATION.md) and [release acceptance checklist](docs/RELEASE_ACCEPTANCE.md). This repository does **not** claim certification, MLPerf compliance or production-readiness.
-
-## Reproduce simulation
-
-Linux/WSL with Python 3 and Icarus Verilog:
-
-```bash
-bash scripts/test.sh
-python3 scripts/check_structure.py
-```
-
-## Vivado 2025.2 — complete UART/NPU project
-
-From project root in Tcl Console:
+In **Vivado Tcl Console** from the downloaded repository root:
 
 ```tcl
 source vivado/create_uart_npu_project.tcl
 open_project build/uart_npu_project/uart_npu.xpr
+launch_runs synth_1 -jobs 4
+wait_on_run synth_1
+launch_runs impl_1 -to_step write_bitstream -jobs 4
+wait_on_run impl_1
 ```
 
-Or batch flow:
+Check routed timing, then **program via Vivado Hardware Manager** using `build/bitstream/arty_a7_uart_npu.bit`. The canonical location is generated locally (not included in the ZIP). The [alternative non-project Tcl flow](docs/BITSTREAM_LOCATION.md) is also provided.
 
-```tcl
-source vivado/build_uart_npu.tcl
-```
-
-Generated project, checkpoints, bitstreams and timing/utilisation reports stay beneath ignored `build/`. **Always program the single canonical bitstream `build/bitstream/arty_a7_uart_npu.bit`.** The GUI flow publishes it automatically using a post-write hook; the batch script writes it there directly. For an existing GUI project, run `source vivado/publish_existing_gui_bitstream.tcl` once after Generate Bitstream. See [bitstream location guide](docs/BITSTREAM_LOCATION.md). The original smaller 4→2 board top remains available independently.
-
-## Hardware UART and GUI
-
-With the **integrated UART/NPU bitstream** programmed on the Arty A7:
+In **Windows PowerShell**, replacing COM4 with the actual board port:
 
 ```powershell
 py -m pip install -r host/requirements.txt
 py host/smoke_uart.py --port COM4 --model 8
 py host/gui.py
+py host/benchmark_npu.py --port COM4 --model all --count 100 --warmup 5 --fpga-cycles
 ```
 
-Use the real Windows COM port. GUI controls drive signed INT8 features, not physical sensors; outputs are mathematical classes for the selected test weights.
+Close the GUI before running the command-line benchmark so only one process owns the COM port. Benchmark results are saved under `build/benchmarks/`.
 
-## Reproducible physical FPGA benchmark
+## Quick start: reusable Vivado IP
 
-```powershell
-py host/benchmark_npu.py --port COM4 --model all --count 100 --warmup 5
+In Vivado Tcl Console:
+
+```tcl
+source vivado/package_npu_ip.tcl
+source vivado/check_npu_ip_catalog.tcl
+source vivado/check_npu_ip_consumer.tcl
 ```
 
-This loads all three model sizes, compares every FPGA score against the independent Python reference, and writes per-transaction CSV and aggregate JSON under `build/benchmarks/`. It reports p50/p95/p99 **PC–UART–FPGA round-trip latency**, model load time and observed single-stream transaction rate. An optional firmware telemetry command (0x54) also provides FPGA dispatch-to-completion clock cycles.
+To perform independent **100 MHz post-route IP-consumer assessment**, in a fresh Vivado session:
 
-To measure **FPGA clock cycles independently of UART**, rebuild and program the latest integrated UART/NPU bitstream and run:\n\n```powershell\npy host/benchmark_npu.py --port COM4 --model all --count 100 --warmup 5 --fpga-cycles\n```\n\nThe telemetry command returns FPGA **dispatch-to-valid** cycle counts (including handshake overhead), not electrical power or an isolated multiplier pipeline latency. The earlier bitstream does not support this command; don't use `--fpga-cycles` until programming the new bitstream. Physical validation of telemetry and new routed timing are still pending.
+```tcl
+source vivado/package_npu_ip.tcl
+source vivado/build_ip_consumer_impl.tcl
+```
 
-## Repository guides
+This produces hierarchical IP/resource, timing, critical-path, DRC, methodology and estimated-power reports under `build/ip_consumer_implementation/reports/`. The IP exposes synchronous parallel input/configuration/status signals, **not AXI**, and can be added to your own Vivado IP Catalog.
 
-- [Architecture and fixed-point model contract](docs/SCALABLE_NPU_V0_3.md)
-- [UART/GUI/Vivado integration](docs/UART_GUI_INTEGRATION.md)
-- [Industrial verification and benchmark plan](docs/INDUSTRIAL_VERIFICATION.md)
-- [Release evidence and acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
-- [Timing optimisation rationale](docs/PIPELINED_NEURON_TIMING.md)
+[IP port contract and reuse](docs/IP_INTEGRATION.md) · [Independent consumer implementation](docs/IP_CONSUMER_IMPLEMENTATION.md)
 
-All source code is in `rtl/`; no duplicate generated Vivado project is committed.
+## Architecture and capabilities
+
+| Capability | Verified design contract |
+|---|---|
+| Network | Runtime-configurable dense MLP, up to `32→32→32→32→8` |
+| Maximum logical network | 104 computational neurons and 3,328 active weights |
+| Arithmetic | Signed INT8 weights/activations; signed INT32 accumulation and bias |
+| Physical compute lanes | Eight shared INT8 MAC lanes |
+| Activation | Hidden-layer ReLU, saturating signed INT8 output |
+| Model storage | Eight synchronous BRAM-oriented weight banks |
+| Model programming | Run-time via parallel IP write ports or board UART protocol |
+| UI | Python Tkinter with adjustable signed INT8 input features |
+| Target | Arty A7-35T (not Arty S7 or Arty A7-100T constraints) |
+
+**The supplied weights are deterministic numerical test fixtures, not a trained industrial classifier.** This repository assesses FPGA architecture, correctness and performance. It is deliberately independent of individual applications.
+
+## Verification evidence
+
+- **RTL/CI:** standalone accelerator IP wrapper passed 48 Python-golden simulation cases; UART protocol and controller tests; consumer controller simulation wrote 4,096 weight and 128 bias addresses, then completed two maximum-topology inferences.
+- **Physical FPGA UART:** original 300/300 reference comparisons passed; **later 3,000/3,000** user-reported sample run passed (1,000 small, 1,000 medium, 1,000 large). The later test's complete CSV/JSON is not yet archived in GitHub.
+- **Compute latency measured on physical Arty A7:** 114, 250 and 2,394 clock cycles at 100 MHz, equivalent to **1.14, 2.50 and 23.94 µs**. Calculated effective **0.126, 0.218, 0.278 GOPS** (two operations per logical MAC).
+- **Real UART round trip:** roughly **15–16 ms** typical per inference, including PC/USB/serial overhead; not to be confused with FPGA compute-only time.
+- **Reusable Vivado IP:** IP-XACT packaging, IP Catalog discovery, consumer instantiation and out-of-context synthesis passed. Independent consumer implementation previously met 100 MHz: **+2.006 ns setup** and **+0.043 ns hold** slack. Reference packaged-IP hierarchy: **811 LUT, 709 FF, 8 RAMB18, 12 DSP48E1**.
+- **Power:** routed Vivado on-chip estimates only; physical board power and energy/inference are not yet measured. Extended reset/recovery and long-duration soak tests remain.
+
+See [benchmark source evidence](docs/results/arty_a7_benchmark_2026-11-25.json), [datasheet draft](docs/TECHNICAL_DATASHEET_DRAFT.md), [verification methodology](docs/INDUSTRIAL_VERIFICATION.md) and [release gates](docs/RELEASE_ACCEPTANCE.md). Results are build-dependent, and this design is a verified development demonstrator, **not a certified production IP**.
+
+## Source tree
+
+```text
+rtl/          NPU core, BRAM banks, UART board top, standalone IP and consumer
+tb/           Self-checking testbenches
+constraints/  Arty A7-35T timing and GPIO constraints
+vivado/       GUI/batch builds, IP-XACT packaging, consumer implementation
+host/         Python serial driver, GUI, numerical reference and benchmark
+scripts/      Software/RTL regression and benchmark analysis
+docs/         Guides, datasheet draft, verification criteria and measured evidence
+build/        LOCAL generated results only (Git-ignored)
+```
+
+To run source regression on Linux/WSL with Icarus Verilog installed:
+
+```bash
+bash scripts/test.sh
+```
+
+Contributions should preserve exact signed fixed-point results and distinguish simulator, tool-estimated and physically measured results.
