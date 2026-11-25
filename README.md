@@ -1,5 +1,31 @@
 # FPGA Configurable Neural Accelerator
 
+## V1.0 candidate: reusable Vivado Catalog IP + measured performance datasheet
+
+The reusable application-independent **`npu_accelerator_ip`** wrapper exposes synchronous model loading, topology, data, result and handshake ports without Arty-specific UART/GPIO. The standalone wrapper is simulation-verified with the same 48 independent Python-golden cases as the core. A script builds a Vivado IP-XACT catalog component; actual Vivado catalog packaging remains pending hardware-tool validation.
+
+[IP integration and Vivado packaging guide](docs/IP_INTEGRATION.md) · [Engineering draft technical datasheet](docs/TECHNICAL_DATASHEET_DRAFT.md) · [Reproducible measured benchmark evidence](docs/results/arty_a7_benchmark_2026-11-25.json)
+
+The **25 November 2026 hardware benchmark** passed **300/300** bit-exact inferences on Arty A7. Recorded FPGA dispatch-to-valid latencies were **1.14 µs, 2.50 µs and 23.94 µs** for 72, 272 and 3,328 MAC networks, yielding calculated effective core throughput **0.126, 0.218 and 0.278 GOPS**. UART transaction latency remains approximately 15–16 ms, substantially slower than FPGA execution. These are independent observations and should never be conflated.
+
+Generate the comparison CSV and Markdown report with:
+
+```bash
+python3 scripts/analyze_npu_performance.py --input docs/results/arty_a7_benchmark_2026-11-25.json --output build/performance
+```
+
+To package the **RTL as a reusable Vivado IP**, in Vivado Tcl Console:
+
+```tcl
+source vivado/package_npu_ip.tcl
+source vivado/check_npu_ip_catalog.tcl
+```
+
+*Catalog packaging and integration in a separate consuming Vivado project remain unverified until those Tcl commands succeed on Vivado 2025.2.1.*
+
+---
+
+
 **Reusable, application-independent INT8 neural-network accelerator IP** targeting the Digilent **Arty A7-35T (XC7A35T-1L)**. This repository is dedicated to **RTL architecture, correctness, FPGA implementation, interface verification and reproducible performance assessment**.
 
 ## Overview
