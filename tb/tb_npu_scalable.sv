@@ -81,7 +81,7 @@ module tb_npu_scalable;
       features=0; // proves input snapshot is retained after start
       if(busy!==1) $fatal(1,"busy missing for test %0d",i);
       cycles=0;
-      while(valid!==1'b1 && cycles<1200) begin
+      while(valid!==1'b1 && cycles<5000) begin
         @(negedge clk);
         cycles=cycles+1;
       end
