@@ -7,8 +7,8 @@ The purpose is a reusable FPGA accelerator IP for Edge AI inference, with a sens
 | 0 (this commit) | One RTL location, simple 4→2 INT8 core, testbench, A7 board top, Vivado build | CI regression, subsequent user Vivado logs |
 | 1 | Board-verified 100 MHz baseline, switch/LED demonstration, resource report | Bitstream, timing summary, board test record |
 | 2 | INT8 multi-lane MAC (1/4/8), registered pipeline, fixed-point activation/requantise | Randomised bit-exact tests vs Python |
-| 3 | Parameterised MLP, BRAM buffers, runtime model loading/versioned format | Multiple networks without resynthesis |
-| 4 | UART packet protocol, checksums/timeouts, board integration | End-to-end stress and malformed-packet tests |
+| 3 | V0.3 scalable 32-wide MLP, banked synchronous weight storage and RTL model loading | CI simulation (4→8→4→2, 8→16→8→2, 32→32→32→32→8); Vivado BRAM mapping pending |
+| 4 | UART packet protocol, checksums/timeouts, 32-wide board integration and routing | End-to-end stress and malformed-packet tests |
 | 5 | Python GUI with adjustable sensor values (mouse/keyboard arrows), plots and diagnostics | Demo recording, PC↔FPGA comparisons |
 | 6 | Benchmark and portfolio release | Verified latency, throughput, DSP/BRAM/LUT/FF, timing/power reports; concise reproducible instructions |
 
