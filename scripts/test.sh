@@ -41,3 +41,6 @@ iverilog -g2012 -Wall -s arty_a7_uart_npu_top -o build/arty_a7_uart_npu_top.vvp 
 echo 'Testing host protocol and parsing Python GUI modules ...'
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 python3 -m py_compile host/gui.py host/npu_serial.py host/reference_scalable.py
+
+echo 'Checking bearing application entrypoints ...'
+python3 -m py_compile bearing/gui.py bearing/train_export.py bearing/convert_mat.py bearing/model_io.py
