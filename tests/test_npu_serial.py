@@ -5,7 +5,7 @@ import unittest
 
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1] / "host"))
 from npu_serial import (
-    BIAS, CONFIGURE, INFER, PING, WEIGHT, NpuBoard,
+    BIAS, CONFIGURE, INFER, PING, WEIGHT, CYCLES, NpuBoard,
     ProtocolError, decode_reply, pack_request
 )
 
@@ -22,7 +22,7 @@ class MockSerial:
         assert verify == packet[-1]
         cmd = packet[1]
         self.requests.append(packet)
-        scores = [20, 30] + [0]*6 if cmd == INFER else [0]*8
+        scores = [20, 30] + [0]*6 if cmd == INFER else ([250,0,0,0]+[0]*4 if cmd==CYCLES else [0]*8)
         fields = bytes([cmd, 0, 1 if cmd == INFER else 0] + scores)
         checksum = 0
         for x in fields:
@@ -43,16 +43,17 @@ class TransportTest(unittest.TestCase):
         io=MockSerial()
         fpga=NpuBoard(io)
         fpga.ping()
+        self.assertEqual(fpga.read_cycle_count(),250)
         fpga.write_weight(4095,-128)
         fpga.write_bias(127,-123456)
         fpga.configure(8,(16,8,2),shift=4)
         result=fpga.infer([10]*8)
         self.assertEqual((result.class_index,result.scores[:2]),(1,(20,30)))
         self.assertEqual([p[1] for p in io.requests],
-                         [PING,WEIGHT,BIAS,CONFIGURE,INFER])
+                         [PING,CYCLES,WEIGHT,BIAS,CONFIGURE,INFER])
         self.assertEqual(len(io.requests[-1]),35)
-        self.assertEqual(io.requests[1][2:5],bytes([255,15,128]))
-        self.assertEqual(io.requests[2][2:7], bytes([127]) + (-123456).to_bytes(4,"little",signed=True))
+        self.assertEqual(io.requests[2][2:5],bytes([255,15,128]))
+        self.assertEqual(io.requests[3][2:7], bytes([127]) + (-123456).to_bytes(4,"little",signed=True))
 
     def test_bad_checksum_rejected(self):
         raw=bytes([0x5A, PING, 0, 0]+[0]*8+[0])
