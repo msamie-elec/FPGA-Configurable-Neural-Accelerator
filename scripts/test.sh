@@ -14,6 +14,7 @@ echo 'Elaborating complete Arty A7 RTL top ...'
 iverilog -g2012 -Wall -s arty_a7_top -o build/arty_a7_top.vvp rtl/npu_core.sv rtl/arty_a7_top.sv
 echo 'BOARD TOP ELABORATION PASS'
 
+python3 host/reference_mlp.py build/mlp_vectors.hex
 echo 'Testing multilayer inference engine with 1/4/8 MAC lanes ...'
 for lanes in 1 4 8; do
     iverilog -g2012 -Wall -s tb_mlp_engine -Ptb_mlp_engine.LANES="$lanes" \
