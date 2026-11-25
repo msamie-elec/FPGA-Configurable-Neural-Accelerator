@@ -37,3 +37,7 @@ echo 'Elaborating integrated Arty A7 UART top ...'
 iverilog -g2012 -Wall -s arty_a7_uart_npu_top -o build/arty_a7_uart_npu_top.vvp \
     rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv rtl/uart_8n1.sv \
     rtl/npu_uart_bridge.sv rtl/arty_a7_uart_npu_top.sv
+
+echo 'Testing host protocol and parsing Python GUI modules ...'
+python3 -m unittest discover -s tests -p 'test_*.py' -v
+python3 -m py_compile host/gui.py host/npu_serial.py host/reference_scalable.py
