@@ -2,6 +2,11 @@
 
 ## V1.0 candidate: reusable Vivado Catalog IP + measured performance datasheet
 
+### Independent IP consumer: automated Vivado post-route qualification
+
+A new independent board-level consumer uses the **actual packaged `npu0` IP**, programs all supported weight and bias memory locations, runs the maximum MLP workload, and captures routed 100 MHz setup/hold timing, resource utilisation, DRC, methodology and power estimates. Run `source vivado/package_npu_ip.tcl` then `source vivado/build_ip_consumer_impl.tcl` in Vivado. All results are saved under `build/ip_consumer_implementation/reports/`. This scripted physical implementation is **pending user Vivado execution**; CI checks the consumer controller in simulation. [Full independent IP consumer verification guide](docs/IP_CONSUMER_IMPLEMENTATION.md).
+
+
 The reusable application-independent **`npu_accelerator_ip`** wrapper exposes synchronous model loading, topology, data, result and handshake ports without Arty-specific UART/GPIO. The standalone wrapper is simulation-verified with the same 48 independent Python-golden cases as the core. A script builds a Vivado IP-XACT catalog component; actual Vivado catalog packaging remains pending hardware-tool validation.
 
 [IP integration and Vivado packaging guide](docs/IP_INTEGRATION.md) · [Engineering draft technical datasheet](docs/TECHNICAL_DATASHEET_DRAFT.md) · [Reproducible measured benchmark evidence](docs/results/arty_a7_benchmark_2026-11-25.json)
