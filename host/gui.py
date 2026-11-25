@@ -11,6 +11,7 @@ from tkinter import messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 
 from npu_serial import NpuBoard
+from reference_scalable import infer as reference_infer
 
 MODELS = {
     "4 → 8 → 4 → 2": (4, (8, 4, 2)),
@@ -25,6 +26,7 @@ class AcceleratorGUI(tk.Tk):
         self.title("FPGA Edge AI | Arty A7 | Configurable INT8 Inference")
         self.geometry("1000x760")
         self.board = None
+        self.loaded_model = None
         self.working = False
         self.sensor_vars = []
         self.model_var = tk.StringVar(value="8 → 16 → 8 → 2")
@@ -57,10 +59,10 @@ class AcceleratorGUI(tk.Tk):
         config = ttk.Frame(self, padding=(12, 8))
         config.pack(fill="x")
         ttk.Label(config, text="Neural network").pack(side="left")
-        selector = ttk.Combobox(config, textvariable=self.model_var, state="readonly",
+        self.model_selector = ttk.Combobox(config, textvariable=self.model_var, state="readonly",
                                 values=list(MODELS), width=29)
-        selector.pack(side="left", padx=8)
-        selector.bind("<<ComboboxSelected>>", lambda _e: self._rebuild_sensors())
+        self.model_selector.pack(side="left", padx=8)
+        self.model_selector.bind("<<ComboboxSelected>>", lambda _e: self._rebuild_sensors())
         self.load_btn = ttk.Button(config, text="Load example weights into FPGA",
                                    command=self._load_model)
         self.load_btn.pack(side="left", padx=6)
@@ -93,6 +95,8 @@ class AcceleratorGUI(tk.Tk):
         self.infer_btn = ttk.Button(right, text="Run inference on FPGA",
                                     command=self._infer)
         self.infer_btn.pack(fill="x", pady=(0, 10))
+        ttk.Button(right, text="Preview in Python (no board required)",
+                   command=self._preview).pack(fill="x", pady=(0, 10))
         ttk.Button(right, text="Reset sensor inputs to zero",
                    command=self._clear_inputs).pack(fill="x")
         ttk.Label(right, textvariable=self.result_var, wraplength=280,
@@ -145,6 +149,7 @@ class AcceleratorGUI(tk.Tk):
         self.connect_btn.configure(state=state)
         self.load_btn.configure(state=state)
         self.infer_btn.configure(state=state)
+        self.model_selector.configure(state='disabled' if busy else 'readonly')
 
     def _worker(self, action, completed):
         if self.working:
@@ -161,6 +166,7 @@ class AcceleratorGUI(tk.Tk):
         threading.Thread(target=run,daemon=True).start()
 
     def _connect(self):
+        self.loaded_model = None
         if self.board:
             try:self.board.close()
             except Exception:pass
@@ -183,7 +189,8 @@ class AcceleratorGUI(tk.Tk):
         if not self.board:
             messagebox.showwarning("No connection","Connect to the Arty A7 first.")
             return
-        inputs,widths=MODELS[self.model_var.get()]
+        model_name=self.model_var.get()
+        inputs,widths=MODELS[model_name]
         def progress(done,total):
             if done==total or done%128==0:
                 self.after(0,lambda d=done,t=total:self.progress_var.set(f"Loading {d}/{t} weights"))
@@ -191,6 +198,7 @@ class AcceleratorGUI(tk.Tk):
             self.board.load_demo_model(inputs,widths,progress=progress)
             return f"Loaded: {inputs} → " + " → ".join(str(x) for x in widths)
         def completed(message):
+            self.loaded_model=model_name
             self.progress_var.set(message)
             self.result_var.set("Model loaded; adjust sensors then run inference")
         self._worker(work,completed)
@@ -198,6 +206,9 @@ class AcceleratorGUI(tk.Tk):
     def _infer(self):
         if not self.board:
             messagebox.showwarning("No connection","Connect to the Arty A7 first.")
+            return
+        if self.loaded_model != self.model_var.get():
+            messagebox.showwarning("Model not loaded", "Load the selected model into the FPGA first.")
             return
         try:
             inputs,widths=MODELS[self.model_var.get()]
@@ -210,13 +221,36 @@ class AcceleratorGUI(tk.Tk):
         def work():
             return self.board.infer(values)
         def completed(result):
-            self.result_var.set(f"FPGA predicted class: {result.class_index}")
+            golden, expected_class = reference_infer(values, widths)
+            matched = (tuple(golden) == result.scores[:widths[-1]]
+                       and expected_class == result.class_index)
+            self.result_var.set(
+                f"FPGA class: {result.class_index} | Python class: {expected_class}\n"
+                + ("Bit-exact MATCH" if matched else "MISMATCH — inspect board/model"))
             self.scores.configure(state="normal")
             self.scores.delete("1.0","end")
             self.scores.insert("end", "\n".join(
                 f"Output {i}: {score}" for i,score in enumerate(result.scores[:widths[-1]])))
             self.scores.configure(state="disabled")
         self._worker(work,completed)
+
+    def _preview(self):
+        try:
+            inputs,widths=MODELS[self.model_var.get()]
+            values=[int(v.get()) for v in self.sensor_vars[:inputs]]
+            if any(v<-128 or v>127 for v in values):
+                raise ValueError("Sensor inputs must be signed INT8.")
+            score,winner=reference_infer(values,widths)
+        except ValueError as exc:
+            messagebox.showerror("Invalid sensor inputs",str(exc))
+            return
+        self.result_var.set(f"Python-only reference class: {winner}\n"
+                            "No FPGA hardware was used")
+        self.scores.configure(state="normal")
+        self.scores.delete("1.0","end")
+        self.scores.insert("end", "\n".join(
+            f"Reference output {i}: {s}" for i,s in enumerate(score)))
+        self.scores.configure(state="disabled")
 
 
 if __name__=="__main__":
