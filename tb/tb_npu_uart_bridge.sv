@@ -92,6 +92,13 @@ module tb_npu_uart_bridge;
        !result_seen || last_class!==1)
       $fatal(1,"inference mismatch status=%d class=%d scores=%d,%d",
              received[2],received[3],received[4],received[5]);
+    command(8'h54,0,0);
+    if(received[2]!==0 || {received[7],received[6],received[5],received[4]}==0 ||
+       {received[7],received[6],received[5],received[4]}>1000)
+      $fatal(1,"invalid FPGA cycle telemetry status=%0d count=%0d",
+          received[2],{received[7],received[6],received[5],received[4]});
+    $display("FPGA CORE-CYCLE TELEMETRY PASS: cycles=%0d",
+          {received[7],received[6],received[5],received[4]});
     command(8'h50,0,0);
     if(received[2]!==0) $fatal(1,"ping failed");
     $display("UART BRIDGE PASS: weights, biases, config, checksum rejection, inference, response, ping");
