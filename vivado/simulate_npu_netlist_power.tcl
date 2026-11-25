@@ -7,6 +7,7 @@ set net_file [file join $net_dir npu_core_post_synth_func.v]
 if {![file isfile $net_file]} {error "Missing post-synthesis core netlist: run build_npu_netlist_power.tcl"}
 catch {close_sim}
 catch {close_project}
+catch {close_design}
 create_project -force npu_netlist_power [file join $net_dir sim_project] -part xc7a35ticsg324-1L
 # Behavioral simulation of a STRUCTURAL functional netlist. This does not
 # compile the original npu_scalable_core.sv into the simulator.
