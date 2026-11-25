@@ -52,7 +52,7 @@ Or batch flow:
 source vivado/build_uart_npu.tcl
 ```
 
-Generated project, checkpoints, bitstreams and timing/utilisation reports stay beneath ignored `build/`. The original smaller 4→2 board top remains available independently.
+Generated project, checkpoints, bitstreams and timing/utilisation reports stay beneath ignored `build/`. **Always program the single canonical bitstream `build/bitstream/arty_a7_uart_npu.bit`.** The GUI flow publishes it automatically using a post-write hook; the batch script writes it there directly. For an existing GUI project, run `source vivado/publish_existing_gui_bitstream.tcl` once after Generate Bitstream. See [bitstream location guide](docs/BITSTREAM_LOCATION.md). The original smaller 4→2 board top remains available independently.
 
 ## Hardware UART and GUI
 
