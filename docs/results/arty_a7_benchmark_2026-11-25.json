@@ -1,0 +1,82 @@
+{
+  "timestamp_utc": "2026-11-25T19:42:03.912104+00:00",
+  "source": "User-submitted physical Arty A7-35T benchmark_summary.json on 2026-11-25; unmodified numerical measurements",
+  "target": "Digilent Arty A7-35T / UART at 115200 8N1",
+  "clock_hz": 100000000,
+  "models": [
+    {
+      "model": "small",
+      "topology": [
+        4,
+        8,
+        4,
+        2
+      ],
+      "count": 100,
+      "passes": 100,
+      "macs": 72,
+      "cycles": 114,
+      "load_ms": 1391.109,
+      "uart_ms": {
+        "min": 14.4986,
+        "mean": 15.915362,
+        "p50": 15.91395,
+        "p95": 16.285295,
+        "p99": 16.64888,
+        "max": 16.835
+      }
+    },
+    {
+      "model": "medium",
+      "topology": [
+        8,
+        16,
+        8,
+        2
+      ],
+      "count": 100,
+      "passes": 100,
+      "macs": 272,
+      "cycles": 250,
+      "load_ms": 4782.255,
+      "uart_ms": {
+        "min": 14.9594,
+        "mean": 15.854205,
+        "p50": 15.8276,
+        "p95": 16.47651,
+        "p99": 16.770927000000004,
+        "max": 16.932
+      }
+    },
+    {
+      "model": "large",
+      "topology": [
+        32,
+        32,
+        32,
+        32,
+        8
+      ],
+      "count": 100,
+      "passes": 100,
+      "macs": 3328,
+      "cycles": 2394,
+      "load_ms": 54925.377,
+      "uart_ms": {
+        "min": 13.9693,
+        "mean": 15.281035999999999,
+        "p50": 15.26365,
+        "p95": 15.774024999999998,
+        "p99": 16.197689999999998,
+        "max": 16.4145
+      }
+    }
+  ],
+  "limitations": [
+    "Core cycle count starts at UART dispatch and stops when NPU asserts valid; not an isolated datapath-only signal.",
+    "UART latency includes host scheduling, USB serial and protocol overhead.",
+    "The 300 exact matches do not establish lifetime reliability or task-model accuracy.",
+    "No switching-activity-annotated or instrument-measured power in this benchmark.",
+    "No bitstream SHA256, board serial or measured rail current supplied with raw benchmark."
+  ]
+}
