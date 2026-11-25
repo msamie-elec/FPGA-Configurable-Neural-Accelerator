@@ -81,6 +81,18 @@ This produces hierarchical IP/resource, timing, critical-path, DRC, methodology 
 
 **The supplied weights are deterministic numerical test fixtures, not a trained industrial classifier.** This repository assesses FPGA architecture, correctness and performance. It is deliberately independent of individual applications.
 
+## Industrial verification, reliability and power assessment
+
+[Consolidated measured verification report](docs/VERIFICATION_REPORT.md) · [Hardware endurance protocol](docs/RELIABILITY_TESTS.md) · [Power measurement instructions](docs/POWER_MEASUREMENT.md) · [Technical datasheet draft](docs/TECHNICAL_DATASHEET_DRAFT.md)
+
+Run a physical **endurance and repeated model-programming test** on the UART/NPU bitstream (not the IP consumer):
+
+```powershell
+py host/reliability_campaign.py --port COM4 --model all --count 1000 --reload-every 250
+```
+
+Outputs per-inference JSONL and per-model/overall evidence under `build/reliability/`. It is **not** a physical fault injector. The separate RTL regression adds malformed command, corrupt-weight, invalid-topology and parser-reset tests. For power, Vivado's ~78 mW is only a tool estimate; `scripts/assess_power.py` calculates power/energy **only** from externally measured same-rail voltage/current and measured sustained FPS. Physical power and extended fault recovery remain unverified.
+
 ## Verification evidence
 
 - **RTL/CI:** standalone accelerator IP wrapper passed 48 Python-golden simulation cases; UART protocol and controller tests; consumer controller simulation wrote 4,096 weight and 128 bias addresses, then completed two maximum-topology inferences.
