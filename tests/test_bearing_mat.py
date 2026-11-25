@@ -8,10 +8,22 @@ import numpy as np
 from scipy.io import savemat
 
 from bearing.convert_mat import read_mat_channels,extract_from_mat
+from bearing.build_feature_table import load_labels
 from bearing.features import FEATURE_NAMES
 
 
 class MatConverterTests(unittest.TestCase):
+    def test_official_32_bearing_manifest(self):
+        manifest=Path(__file__).resolve().parents[1]/"bearing"/"paderborn_labels_official.csv"
+        labels=load_labels(manifest)
+        self.assertEqual(len(labels),32)
+        self.assertEqual(sum(v==0 for v in labels.values()),6)
+        self.assertEqual(sum(v==1 for v in labels.values()),26)
+        self.assertEqual(labels["K001"],0)
+        self.assertEqual(labels["KA04"],1)
+        self.assertEqual(labels["KI21"],1)
+
+
     def test_channel_selection_alignment_and_export(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)
