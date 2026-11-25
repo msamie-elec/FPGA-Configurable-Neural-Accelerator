@@ -74,3 +74,9 @@ vvp build/tb_npu_uart_robustness.vvp
 
 echo 'Checking endurance runner and measured-power analyser syntax ...'
 python3 -m py_compile host/reliability_campaign.py scripts/assess_power.py
+
+echo 'Elaborating RTL for three-phase SAIF power characterization ...'
+iverilog -g2012 -Wall -s tb_npu_power_activity -o build/tb_npu_power_activity.vvp \
+    rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv tb/tb_npu_power_activity.sv
+# XSim-specific $stop power windows are intentionally not executed in vvp.
+python3 -m py_compile scripts/summarize_saif_power.py
