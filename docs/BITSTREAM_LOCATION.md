@@ -18,7 +18,7 @@ The script opens `impl_1`, checks WNS/WHS >=0, and copies its existing bitstream
 
 ## Future builds
 
-- GUI: recreate project with `source vivado/create_uart_npu_project.tcl`; the script registers a **post-write_bitstream Tcl hook** which automatically copies the GUI-generated bitstream into the canonical location after Generate Bitstream and verifies timing. Existing GUI projects need the one-time command above or a refreshed hook.
+- GUI: recreate project with `source vivado/create_uart_npu_project.tcl`; the script registers a **post-write_bitstream Tcl hook** which automatically copies the GUI-generated bitstream into the canonical location after Generate Bitstream and verifies timing. For an existing GUI project, run `source vivado/enable_gui_bitstream_publish.tcl` once to register the same hook for future Generate Bitstream runs (save the project when prompted).
 - Batch: `source vivado/build_uart_npu.tcl` builds and directly writes the canonical file after routed timing passes.
 
 Only one output is designated for programming, although Vivado may keep internal project implementation files. Those internal artifacts are required by Vivado and should not be deleted manually.
