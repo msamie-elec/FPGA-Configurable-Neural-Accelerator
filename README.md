@@ -1,5 +1,18 @@
 # FPGA Configurable Neural Accelerator
 
+## V0.3 — Scalable eight-lane INT8 NPU (experimental, simulation-tested)
+
+The new **`rtl/npu_scalable_core.sv`** and **`rtl/npu_weight_bank.sv`** implement a reusable time-multiplexed neural processor with up to 32 inputs, up to three 32-neuron hidden layers and up to eight output neurons. Maximum network: **32 → 32 → 32 → 32 → 8**, requiring 104 computational neurons and 3,328 INT8 weights. Eight reusable multiplication lanes compute one neuron at a time.
+
+Eight synchronous banked weight memories (512 bytes each, with a BRAM inference hint), an INT32 accumulator, bias, shift/saturation, hidden-layer ReLU, activation ping-pong buffers and argmax are implemented. Topology, weights, biases and inputs can be changed between inferences; the current loading interface is parallel RTL writes, **not UART**.
+
+**GitHub simulation:** 48 Python-golden cases across 4→8→4→2, 8→16→8→2 and 32→32→32→32→8 are run as part of `bash scripts/test.sh`. Run `vivado -mode batch -source vivado/synth_scalable.tcl` to inspect DSP/BRAM mapping. See [V0.3 architecture, register contract and limitations](docs/SCALABLE_NPU_V0_3.md).
+
+**Not yet completed:** New core is not integrated into `arty_a7_top`, nor has it completed new Vivado synthesis, routed 100 MHz timing, physical FPGA checks, UART transport or interactive GUI. The existing baseline board top stays unchanged.
+
+---
+
+
 Clean-room FPGA Edge AI project for Digilent **Arty A7-35T**. The long-term target is a **runtime-configurable INT8 multilayer NPU with a Python GUI**. This repository tracks verified milestones rather than claiming unfinished features.
 
 ## V0.1 — baseline under hardware validation
