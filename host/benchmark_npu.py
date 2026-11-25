@@ -16,7 +16,7 @@ import random
 import statistics
 import time
 
-from npu_serial import NpuBoard
+from npu_serial import NpuBoard, ProtocolError
 from reference_scalable import infer
 
 MODELS = {
@@ -137,6 +137,16 @@ def main():
     board=NpuBoard.open(args.port,timeout=3.0)
     try:
         board.ping()
+        if args.fpga_cycles:
+            try:
+                board.read_cycle_count()
+            except ProtocolError as exc:
+                raise SystemExit(
+                    "The FPGA rejects UART cycle telemetry (0x54). Program the NEW "
+                    "bitstream built from current main in Vivado Hardware Manager, "
+                    "or omit --fpga-cycles to benchmark your existing firmware. "
+                    f"Device response: {exc}"
+                ) from exc
         for name in chosen:
             print(f"Running {name}: {args.count} samples after {args.warmup} warmup")
             metrics,rows=benchmark_one(board,name,args.count,args.warmup,args.seed,args.fpga_cycles)
