@@ -63,3 +63,22 @@ All steps must preserve `bearing_id`, original recording filename, operating con
 Implemented here: numerical feature-extraction functions and a source-preserving CSV-to-feature-table command; synthetic-waveform *calculation* tests (not model training or fault-validation).
 
 Not yet implemented: original MATLAB format verification, measured example extraction, bearing-level splits, trained model, calibrated quantisation or bearing-specific GUI integration. These cannot be honestly claimed without actual real records.
+
+## V0.6 training and true-data GUI
+
+The repository now includes `bearing/train_export.py` (grouped-bearing validation, real signal features, candidate MLP training and bit-exact fixed-point export), `bearing/model_io.py` (strict model shape/range checks and UART loading), `bearing/gui.py` (held-out healthy/damaged examples with real feature values), and synthetic unit tests **only for the processing pipeline**.
+
+**The genuine Paderborn model is NOT yet trained** because no original measured recordings or extracted real feature table were provided to this execution. The training command refuses to operate without the labelled feature CSV; the GUI refuses to label a deterministic demo model as bearing health.
+
+After acquiring and exporting a meaningful set of labelled real recordings (with multiple distinct physical specimens per class), run:
+
+```powershell
+py -m pip install -r bearing/requirements.txt
+py -m bearing.build_feature_table --input data/bearing/csv --labels bearing/labels.csv --output build/bearing/features.csv
+py -m bearing.train_export --features build/bearing/features.csv --output build/bearing/trained
+py -m bearing.gui
+```
+
+The model manifest is `build/bearing/trained/bearing_model.json` and the authentic held-out measurements are `build/bearing/trained/held_out_examples.csv`. Both remain **local** and are excluded from Git. Physical device programming uses the existing UART bitstream and an independent fixed-point Python comparison.
+
+Evaluation: split by physical bearing ID (never random recording windows), calculate preprocessing only using training rows, select integer candidates on held-out **validation** bearings, then calculate held-out test metrics once. The fixed-point model uses **global per-layer arithmetic shift** and has a 2-logit final layer whose class-0 score is 0. A baseline float sklearn classifier is trained, then re-expressed as quantised FPGA weights and biases; report *quantised* validation/test metrics rather than float training metrics. The current acceptance flag is a preliminary quality gate, not industrial safety certification.
