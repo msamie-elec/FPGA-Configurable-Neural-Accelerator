@@ -18,6 +18,8 @@ opt_design
 place_design
 route_design
 report_timing_summary -report_unconstrained -file [file join $out timing_routed.rpt]
+report_timing -delay_type max -max_paths 30 -nworst 1 -path_type full_clock_expanded -input_pins -file [file join $out critical_setup_paths.rpt]
+report_timing -delay_type min -max_paths 10 -nworst 1 -path_type full_clock_expanded -file [file join $out hold_paths.rpt]
 report_utilization -hierarchical -file [file join $out utilization_routed.rpt]
 report_drc -file [file join $out drc_routed.rpt]
 report_methodology -file [file join $out methodology_routed.rpt]
