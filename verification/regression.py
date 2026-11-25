@@ -116,7 +116,13 @@ def traces(lanes, serial, trained=None):
             {"weights": [[1, 1, 1, 1], [-1, -2, -3, -4]], "bias": [0, -10]},
         ]
         image = model_image(corners)
-        t.load(image)
+        # Reject a final chunk one byte over the image, then retry at the
+        # same offset. A successful commit also checks that CRC did not advance.
+        t.command(0x10, struct.pack("<II", len(image), binascii.crc32(image)))
+        t.command(0x11, struct.pack("<I", 0) + image[:124])
+        t.command(0x11, struct.pack("<I", 124) + image[124:] + b"\0", b"\x08")
+        t.command(0x11, struct.pack("<I", 124) + image[124:])
+        t.command(0x12)
         t.run(corners, [-128])
         for byte_index, value in ((0, 0), (56, 1), (40, 8), (52, 2), (len(image)-1, 1)):
             bad = bytearray(image)

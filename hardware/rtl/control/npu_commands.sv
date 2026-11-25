@@ -13,7 +13,7 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
     localparam [3:0] IDLE=0, IMAGE=1, INPUT_BYTES=2, CHECK_HEADER=3,
         CHECK_DESC=4, BIAS_READ=5, CHECK_BIAS=6, RESULT_READ=7, RESULT_SAVE=8,
         DESC_FETCH=9, DESC_PREP=10, DESC_LIMITS=11, COMMIT_REPLY=12,
-        BIAS_EVAL=13;
+        BIAS_EVAL=13, CHECK_IMAGE_CHUNK=14;
     localparam integer MAX_IMAGE=32+128+16384+4096+32;
     reg [3:0] state;
     reg [255:0] header, descriptors [0:3];
@@ -21,6 +21,8 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
     reg committed, loading, staged, input_open, ready_result, start_engine;
     reg model_error;
     reg [14:0] image_len, image_pos;
+    reg [15:0] image_chunk_end;
+    wire [7:0] image_chunk_bytes = req_len - 8'd4;
     reg [31:0] expected_crc, image_crc;
     reg [8:0] input_len, input_pos;
     reg [7:0] cursor, chunk_end, page_count;
@@ -123,7 +125,8 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
     task automatic send_status(input [7:0] code);
         begin
             reply_len <= 1;
-            reply_payload <= {1016'd0,code};
+            // Only bytes below reply_len are sent by the packet link.
+            reply_payload[7:0] <= code;
             reply <= 1;
             previous_status <= code;
             state <= IDLE;
@@ -148,7 +151,7 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
             start_engine <= 0;
             reply <= 0;
             reply_len <= 0;
-            reply_payload <= 0;
+            reply_payload[7:0] <= 0;
             previous_status <= 0;
             job_id <= 0;
             image_layout_valid <= 0;
@@ -212,12 +215,11 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
                         else if (busy) send_status(BUSY);
                         else if (!loading || payload[31:0] != {17'd0,image_pos})
                             send_status(BAD_SEQUENCE);
-                        else if ({1'b0,image_pos}+{8'd0,req_len}-16'd4 > image_len)
-                            send_status(OUT_OF_RANGE);
                         else begin
+                            image_chunk_end <= {1'b0,image_pos} + {8'd0,image_chunk_bytes};
                             cursor <= 4;
                             chunk_end <= req_len;
-                            state <= IMAGE;
+                            state <= CHECK_IMAGE_CHUNK;
                         end
                         8'h12: if (req_len != 0) send_status(BAD_LEN);
                         else if (busy) send_status(BUSY);
@@ -267,7 +269,7 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
                             page_index <= payload[8:0];
                             page_count <= payload[23:16];
                             page_pos <= 0;
-                            reply_payload <= {992'd0,payload[23:0],8'd0};
+                            reply_payload[31:0] <= {payload[23:0],8'd0};
                             state <= RESULT_READ;
                         end
                         8'h7f: if (req_len != 0) send_status(BAD_LEN);
@@ -283,6 +285,10 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
                         end
                         default: send_status(UNSUPPORTED);
                     endcase
+                end
+                CHECK_IMAGE_CHUNK: begin
+                    if (image_chunk_end > {1'b0,image_len}) send_status(OUT_OF_RANGE);
+                    else state <= IMAGE;
                 end
                 IMAGE: begin
                     image_crc <= crc32(image_crc,octet);
