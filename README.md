@@ -83,7 +83,7 @@ This produces hierarchical IP/resource, timing, critical-path, DRC, methodology 
 
 ## Matched post-synthesis netlist power assessment (experimental)
 
-The previous RTL-core SAIF data matched only **99/3,664** nets in the routed UART/NPU design. To address this, a new **core-only post-synthesis netlist SAIF** workflow is available: Vivado exports a functional core Verilog netlist and matching checkpoint, XSim captures idle/loading/inference activity from the structural netlist, and Vivado reads that SAIF into the **same** checkpoint. This is a separate OOC study, not a routed-UART or physical-power claim.
+The previous RTL-core SAIF data matched only **99/3,664** nets in the routed UART/NPU design. To address this, a new **core-only post-synthesis netlist SAIF** workflow is available: Vivado exports a functional core Verilog netlist and matching checkpoint, XSim captures idle/loading/inference activity from the structural netlist, and Vivado reads that SAIF into the **same** checkpoint. This is a separate OOC study; Vivado's static power still reflects the FPGA device, not only the NPU core. It is not a routed-UART or physical-power claim.
 
 [Complete one-command netlist power workflow and limitations](docs/NETLIST_POWER_WORKFLOW.md). From a fresh Vivado Tcl Console in the downloaded repository root:
 
