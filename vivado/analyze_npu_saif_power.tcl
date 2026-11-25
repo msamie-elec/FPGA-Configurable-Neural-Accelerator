@@ -43,8 +43,20 @@ foreach phase {idle loading inference} {
   # simulation-only testbench scope, leaving u_bridge/accelerator.
   read_saif -strip_path tb_npu_power_activity -out_file $unmatched $f
   report_power -file [file join $reports "power_${phase}_saif.rpt"]
-  report_switching_activity -file [file join $reports "activity_${phase}.rpt"]
+  # report_switching_activity requires an explicit object list in Vivado 2025.2.1.
+  # Omit this optional diagnostic: it previously aborted the phase loop.
+  # read_saif -out_file and report_power provide mapping and power evidence.
+  set report [file join $reports "power_${phase}_saif.rpt"]
+  if {![file isfile $report] || [file size $report] < 128} {
+    error "Missing/empty power report for $phase: $report"
+  }
   puts "SAIF POWER REPORT: [file join $reports "power_${phase}_saif.rpt"]"
+}
+foreach name {power_vectorless.rpt power_idle_saif.rpt power_loading_saif.rpt power_inference_saif.rpt} {
+  set report [file join $reports $name]
+  if {![file isfile $report] || [file size $report] < 128} {
+    error "Incomplete power analysis: missing/empty report $report"
+  }
 }
 puts "POWER REPORTS READY: $reports"
 puts "IMPORTANT: examine Design Nets Matched, unmatched nets and confidence."
