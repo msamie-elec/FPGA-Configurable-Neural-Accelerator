@@ -1,5 +1,37 @@
 # FPGA Configurable Neural Accelerator
 
+## V0.4 — UART + scalable NPU + interactive GUI (integration milestone)
+
+The experimental integrated top `arty_a7_uart_npu_top` connects the previously verified 104-neuron-capacity NPU to an 8N1, 115200-baud USB-UART interface. The board accepts runtime weight/bias writes, topology configuration, 32 signed INT8 sensor inputs and returns eight INT8 scores with an argmax class. The FPGA top uses **E3 100 MHz, UART A9/D10, BTN1 reset, four user LEDs**.
+
+A Windows/Python Tkinter GUI lets users choose among 14-, 26-, and 104-neuron networks, load example weights and change sensor inputs with mouse sliders or keyboard-arrow spinboxes before running FPGA inference. The weights are *demonstration values only* — they are not trained sensor-fault models.
+
+**Automated CI:** all pre-existing NPU numeric regressions plus a serial bit-level UART transaction test, integrated top elaboration and host Python protocol tests. **Not yet validated:** integrated Vivado post-route timing/bitstream and real board communication.
+
+### Quick start: integrated Arty A7 design
+
+From project root in Vivado Tcl console:
+
+```tcl
+source vivado/create_uart_npu_project.tcl
+open_project build/uart_npu_project/uart_npu.xpr
+```
+
+Or use `source vivado/build_uart_npu.tcl` for a complete *attempted* synth/place/route/bitstream with reports under `build/uart_npu/`. Do not consider the physical implementation passed until the resulting timing/DRC reports have been checked.
+
+After a successful hardware build and board programming:
+
+```powershell
+py -m pip install -r host/requirements.txt
+py host/smoke_uart.py --port COM4 --model 8
+py host/gui.py
+```
+
+Use your actual COM port. See the complete [UART, GUI and Vivado integration guide](docs/UART_GUI_INTEGRATION.md) and [scalable NPU architecture](docs/SCALABLE_NPU_V0_3.md).
+
+---
+
+
 ## V0.3 — Scalable eight-lane INT8 NPU (experimental, simulation-tested)
 
 The new **`rtl/npu_scalable_core.sv`** and **`rtl/npu_weight_bank.sv`** implement a reusable time-multiplexed neural processor with up to 32 inputs, up to three 32-neuron hidden layers and up to eight output neurons. Maximum network: **32 → 32 → 32 → 32 → 8**, requiring 104 computational neurons and 3,328 INT8 weights. Eight reusable multiplication lanes compute one neuron at a time.
