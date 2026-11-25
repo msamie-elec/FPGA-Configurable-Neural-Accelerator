@@ -24,7 +24,7 @@ module npu_scalable_core (
 );
   localparam [3:0]
     IDLE=0, READ_WEIGHT=1, MULTIPLY=2, REDUCE1=3, REDUCE2=4,
-    ACCUMULATE=5, STORE=6, DONE=7;
+    ACCUMULATE=5, BIAS_ADD=6, QUANTIZE=7, STORE=8, DONE=9;
   reg [3:0] state;
   reg [2:0] layer_idx, layers_q;
   reg [5:0] width0_q, width1_q, width2_q, width3_q;
@@ -42,8 +42,9 @@ module npu_scalable_core (
   reg signed [17:0] sums_a[0:3];
   reg signed [19:0] sums_b[0:1];
   reg signed [31:0] acc;
-  reg signed [31:0] weighted_sum;
+  reg signed [31:0] biased_result;
   reg signed [31:0] shifted_sum;
+  reg signed [7:0] clipped_next;
   reg signed [7:0] clipped;
   reg signed [7:0] peak_value;
   reg [2:0] peak_index;
@@ -74,12 +75,11 @@ module npu_scalable_core (
       2: requested_width=size2;
       default: requested_width=size3;
     endcase
-    weighted_sum = acc + biases[{layer_idx[1:0],5'b0}+neuron_idx];
-    shifted_sum = weighted_sum >>> shift_q;
-    if (shifted_sum>127) clipped=8'sd127;
-    else if (shifted_sum< -128) clipped=-8'sd128;
-    else clipped=shifted_sum[7:0];
-    if (layer_idx != layers_q-1 && clipped<0) clipped=0;
+    shifted_sum = biased_result >>> shift_q;
+    if (shifted_sum>127) clipped_next=8'sd127;
+    else if (shifted_sum< -128) clipped_next=-8'sd128;
+    else clipped_next=shifted_sum[7:0];
+    if (layer_idx != layers_q-1 && clipped_next<0) clipped_next=0;
   end
 
   always @(posedge clk) begin
@@ -88,6 +88,7 @@ module npu_scalable_core (
       outputs<=0;predicted_class<=0;
       layer_idx<=0; layers_q<=0;neuron_idx<=0;group_idx<=0;
       in_count<=0;out_count<=0;acc<=0;shift_q<=0;
+      biased_result<=0;clipped<=0;
       width0_q<=0;width1_q<=0;width2_q<=0;width3_q<=0;
       peak_value<=-128;peak_index<=0;
       for(i=0;i<32;i=i+1) begin
@@ -158,11 +159,21 @@ module npu_scalable_core (
           acc <= acc + {{12{sums_b[0][19]}},sums_b[0]}
                      + {{12{sums_b[1][19]}},sums_b[1]};
           if(group_idx==3 || ({group_idx,3'b000}+8)>=in_count)
-            state<=STORE;
+            state<=BIAS_ADD;
           else begin group_idx<=group_idx+1'b1;state<=READ_WEIGHT;end
         end
+        BIAS_ADD: begin
+          // Isolate the 32-bit bias addition from saturation and argmax logic.
+          biased_result <= acc + biases[{layer_idx[1:0],5'b0}+neuron_idx];
+          state <= QUANTIZE;
+        end
+        QUANTIZE: begin
+          // Register saturation and hidden-layer ReLU before output selection.
+          clipped <= clipped_next;
+          state <= STORE;
+        end
         STORE: begin
-          // acc includes all product groups; add the bias exactly once.
+          // The comparison depends on a registered INT8 activation.
           if(layer_idx[0]==0) activation_b[neuron_idx]<=clipped;
           else activation_a[neuron_idx]<=clipped;
           if(layer_idx==layers_q-1) begin
