@@ -52,6 +52,8 @@ def percentile(values, q: float):
     index = (len(xs) - 1) * q / 100
     left = int(index)
     right = min(len(xs)-1, left+1)
+    if right == left:
+        return xs[left]
     return xs[left] * (right-index) + xs[right] * (index-left)
 
 
