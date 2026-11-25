@@ -68,6 +68,15 @@ The design has now been specified to module and memory-port level. **It is a pro
 
 V1 is a **1D 1/4/8-lane parallel PE vector**, with banked/packed memory and a runtime-loadable dense network. It is **not** a 2D systolic array; no external AXI/DDR DMA or application-specific feature extraction is included in the FPGA.
 
+## Engineering benchmark and flagship-quality release criteria
+
+Our ambition is stronger **verified custom accelerator IP**—not merely a larger README or more complex application. The following references were reviewed for real design structure and evidence; comparisons are qualitative until workloads and boards are made comparable:
+
+- [Three-repository code/evidence review and competitive differentiation](docs/COMPETITOR_REVIEW_AND_DIFFERENTIATION.md)
+- [Flagship FPGA validation, PPA benchmark methodology, and CNN extension gates](docs/FLAGSHIP_ACCEPTANCE_AND_BENCHMARK_PLAN.md)
+
+Core V1 (runtime-programmable dense INT8 inference) remains the first implementation target. A genuine CNN datapath is a later, test-gated extension. No performance advantage over the reference repositories is claimed until physical evidence exists.
+
 ## Engineering documentation
 
 - [Project charter and acceptance criteria](docs/PROJECT_CHARTER.md)

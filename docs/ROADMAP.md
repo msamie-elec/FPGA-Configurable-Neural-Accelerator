@@ -63,3 +63,10 @@ Candidate Upwork title after hardware verification: **“Configurable FPGA Neura
 - AMD Vivado manuals: https://docs.amd.com/
 
 The exact 7-series board variant must be confirmed from the actual physical hardware. No third-party board XDC or dataset is copied into this planning package.
+
+
+## 2026-11-25 external GitHub benchmark review and flagship extension
+
+The three review repositories have been inspected. See [competitor code/evidence audit](COMPETITOR_REVIEW_AND_DIFFERENTIATION.md) and [flagship acceptance and reproducible benchmarks](FLAGSHIP_ACCEPTANCE_AND_BENCHMARK_PLAN.md).
+
+**Scope decision:** preserve M0–M6 as the immediate priority; do not swap proven dense MAC/loader work for a speculative “universal GPU.” Add a dedicated *post-V1* CNN milestone: Conv2D + pooling with real line/window buffers, multichannel INT8 data handling, runtime model package extension and new board verification. Only after it works should we study an alternate 2D systolic tile and compare area, timing and actual board throughput using the same workload. The eventual Upwork case study must distinguish proposed, simulated, routed and measured capabilities.
