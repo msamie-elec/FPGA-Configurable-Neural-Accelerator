@@ -41,11 +41,11 @@ Request: `A5 | command | payload (fixed length) | XOR(command + all payload byte
 | Bias | 42 | 7-bit bias address, signed INT32 LE | 5 |
 | Configure | 43 | layer_count, input_count, size0, size1, size2, size3, shift | 7 |
 | Inference | 49 | 32 signed INT8 input samples (unused slots zero) | 32 |
-| Ping | 50 | none | 0 |
+| Ping | 50 | none | 0 |\n| Inference cycle telemetry | 54 | none | 0 |
 
 Response: `5A | command | status | class | score0..score7 (signed INT8) | XOR(command,status,class,all scores)` (13 bytes).
 
-Status: 0 OK, 1 bad request XOR, 2 unsupported command, 3 core rejects invalid topology. The `I` reply is delayed until inference finishes. For writing/config/ping, scores and class are zero.
+Status: 0 OK, 1 bad request XOR, 2 unsupported command, 3 core rejects invalid topology. The `I` reply is delayed until inference finishes. For writing/config/ping, scores and class are zero. In the optional 0x54 response, the first four score bytes encode the unsigned 32-bit **FPGA dispatch-to-valid clock cycle count** for the last inference, little-endian; this is not a model output. A new FPGA bitstream is required for this extension; the earlier physical smoke-tested firmware does not provide it.
 
 Weights: `layer*1024 + neuron*32 + feature` (0..4095).
 Bias: `layer*32+neuron` (0..127).
