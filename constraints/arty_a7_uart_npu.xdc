@@ -4,8 +4,8 @@ set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports clk100]
 create_clock -name sys_clk -period 10.000 [get_ports clk100]
 set_property -dict { PACKAGE_PIN A9 IOSTANDARD LVCMOS33 } [get_ports uart_rx]
 set_property -dict { PACKAGE_PIN D10 IOSTANDARD LVCMOS33 } [get_ports uart_tx]
-set_property -dict { PACKAGE_PIN C9 IOSTANDARD LVCMOS33 } [get_ports {btn[1]}]
-# BTN0 is unused on this experimental serial-only top; no pin assignment needed.
+set_property -dict { PACKAGE_PIN C9 IOSTANDARD LVCMOS33 } [get_ports btn_reset]
+# BTN1 is the sole exposed reset input; BTN0 is deliberately not a top port.
 set_property -dict { PACKAGE_PIN H5 IOSTANDARD LVCMOS33 } [get_ports {led[0]}]
 set_property -dict { PACKAGE_PIN J5 IOSTANDARD LVCMOS33 } [get_ports {led[1]}]
 set_property -dict { PACKAGE_PIN T9 IOSTANDARD LVCMOS33 } [get_ports {led[2]}]
