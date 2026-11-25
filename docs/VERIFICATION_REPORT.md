@@ -91,3 +91,9 @@ Follow docs/POWER_MEASUREMENT.md. Optional physical electrical readings can be a
 ## 7. Conclusion
 
 The repository demonstrates a working runtime-configurable signed INT8 neural accelerator, physical 100 MHz compute-cycle telemetry, bit-exact UART/FPGA validation, and a reusable Vivado IP passing consumer integration timing. It is suitable to present as a **measured, engineering-verified FPGA IP demonstrator**, with explicit reliability/power and production-readiness limitations. Do not claim commercial safety assurance or trained-model accuracy.
+
+## 8. Added activity-aware power characterization workflow (unexecuted)
+
+The existing uploaded Vivado 2025.2.1 post-route UART/NPU report is a **vectorless** estimate: **0.080 W total on-chip**, **0.018 W dynamic**, **0.062 W device static**, **Medium confidence**, no simulation activity file and no matched activity nets. The reference source is summarized in `docs/results/uart_npu_vectorless_power_2026-11-25.json`.
+
+An experimental **three-phase XSim activity workflow** has now been implemented (see `docs/SAIF_POWER_WORKFLOW.md`): 100 MHz NPU-core idle, 4,096 weight + 128 bias writes, and 16 maximal-network inferences. It creates separate SAIF files and imports each into the matching routed UART/NPU netlist while logging unmatched nets and confidence. **No Vivado SAIF/XSim run result has been returned or validated.** It is wrong to promote estimated power or energy using these scripts until successful SAIF annotation is independently verified. It remains a tool power estimate, not electrical measurement.
