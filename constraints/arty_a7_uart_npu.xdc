@@ -14,4 +14,5 @@ set_property CONFIG_VOLTAGE 3.3 [current_design]
 set_property CFGBVS VCCO [current_design]
 # UART receive is asynchronous to internal FPGA clock: synchronised by uart_rx two-stage FF.
 # Do not apply a fictitious synchronous input delay to asynchronous UART data.
-set_false_path -from [get_ports uart_rx] -to [get_pins -hier -filter {NAME =~ *u_rx/sync_rx_reg[0]/D}]
+set_false_path -from [get_ports uart_rx]
+set_false_path -from [get_ports {btn[1]}]
