@@ -52,3 +52,12 @@ Target part: `xc7a35ticsg324-1L`. Outputs including `timing_summary.rpt`, `utili
 See [Architecture](docs/ARCHITECTURE.md) and [Roadmap](docs/ROADMAP.md). Multi-lane MAC, BRAM-backed layer scheduling, runtime model loading, UART, GUI and performance benchmarking are subsequent separately verified stages.
 
 The prior experiment is retained in the archive branch. Its timing/performance reports are **not** evidence for this rebuild.
+
+
+## New configurable multilayer accelerator — V0.2 experimental
+
+In addition to the existing 4→2 Arty board demonstration, `rtl/mlp_engine.sv` implements up to three dense layers with configurable widths up to eight, signed INT8 multiply/activations, INT32 accumulation, hidden-layer ReLU and output saturation. Example **4→8→4→2** has 14 computational neurons and 72 weights. `LANES=1,4,8` chooses the compile-time MAC parallelism.
+
+The MLP core has its own testbench and has passed GitHub CI with 64 deterministic **independent Python reference vectors per lane** plus directed topology-change cases. Run `bash scripts/test.sh`. See [MLP architecture and validation](docs/MLP_V0_2.md).
+
+For standalone 1/4/8 synthesis exploration, run `vivado -mode batch -source vivado/synth_mlp.tcl`. **This new MLP is not yet part of the Arty board top**, and no DSP/BRAM mapping, routed 100 MHz timing, UART integration or PC GUI has yet been verified for this subsystem.
