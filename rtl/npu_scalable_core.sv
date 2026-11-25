@@ -5,7 +5,6 @@
 // Weight address: layer*1024 + neuron*32 + input (12 bits).
 // Bias address: layer*32 + neuron (7 bits).
 // Host must preload every used weight and bias before start.
-(* use_dsp = "yes" *)
 module npu_scalable_core (
   input wire clk, rst, start,
   input wire [255:0] features,
