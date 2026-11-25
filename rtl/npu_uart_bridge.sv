@@ -65,6 +65,9 @@ module npu_uart_bridge #(
     .predicted_class(predicted_class),.outputs(scores)
   );
   always @* begin
+    send_checksum=response_cmd ^ response_status ^ {5'd0,response_class};
+    for(integer b=0;b<8;b=b+1)
+      send_checksum=send_checksum ^ response_scores[b*8+:8];
     send_byte=0;
     case(send_idx)
       0:send_byte=8'h5a;
@@ -75,9 +78,6 @@ module npu_uart_bridge #(
       default: if(send_idx>=4 && send_idx<=11)
         send_byte=response_scores[(send_idx-4)*8+:8];
     endcase
-    send_checksum=response_cmd ^ response_status ^ {5'd0,response_class};
-    for(integer b=0;b<8;b=b+1)
-      send_checksum=send_checksum ^ response_scores[b*8+:8];
   end
 
   always @(posedge clk) begin
