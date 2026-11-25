@@ -28,5 +28,9 @@ if {[llength $worst]==0} {error "No setup timing path found"}
 set slack [get_property SLACK [lindex $worst 0]]
 if {$slack < 0} {error "ROUTED 100 MHz TIMING FAIL: WNS $slack ns"}
 write_checkpoint -force [file join $out uart_npu_routed.dcp]
-write_bitstream -force [file join $out arty_a7_uart_npu.bit]
+set uart_publish_source [file join $root build bitstream arty_a7_uart_npu.bit]
+file mkdir [file dirname $uart_publish_source]
+write_bitstream -force $uart_publish_source
+set uart_publish_flow "vivado-nonproject-batch"
+source [file join $root vivado publish_uart_bitstream.tcl]
 puts "UART NPU ROUTED BUILD COMPLETE. Check all DRC and methodology warnings, constraints and board function."
