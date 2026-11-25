@@ -1,6 +1,6 @@
 # FPGA Configurable Neural Accelerator — RTL System Design V1
 
-**Status: implementation architecture specified, RTL NOT YET IMPLEMENTED OR VERIFIED.** These documents define the design to implement, not measured performance. The final FPGA poster must be derived from this hierarchy, not drawn independently.
+**Status: design specification.** See [implemented RTL and refinements](V1_IMPLEMENTATION.md) and [verification results](V1_VERIFICATION_RESULTS.md) for the delivered V1.
 
 ## 1. Product boundary
 

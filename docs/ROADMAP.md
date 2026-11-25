@@ -1,5 +1,9 @@
 # Architecture-first development roadmap and project boundaries
 
+## V1 release progress
+
+M1–M3 have RTL regression evidence. The source includes the Arty A7 build and physical acceptance procedure for M4. M5 has simulated lane comparisons and structural synthesis checks. M6 has a trained fixture with bit-exact simulated outputs. See [verification results](V1_VERIFICATION_RESULTS.md) and [board acceptance](V1_BOARD_TEST.md) for the evidence and remaining physical milestones.
+
 ## Strategic decision
 
 This is a **new, independent repository for reusable FPGA AI accelerator IP**. The older `FPGA-Edge-AI-Inference-Accelerator` repository remains untouched and can later become a separate **application and demonstrations** repository consuming a tagged, validated engine release. No coupling or cross-repo dependency is required to understand this hardware project.

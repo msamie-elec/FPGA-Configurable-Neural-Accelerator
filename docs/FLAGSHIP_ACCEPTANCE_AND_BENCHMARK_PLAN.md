@@ -1,6 +1,6 @@
 # Flagship engineering acceptance & benchmark plan
 
-**Status: planned tests, not measurements.** The repository does not yet have validated accelerator RTL. This plan defines how we will earn stronger claims than an unverified demo.
+**Status: release criteria.** See [V1 evidence](V1_VERIFICATION_RESULTS.md) for simulation and structural synthesis results, and [Arty A7 acceptance](V1_BOARD_TEST.md) for the physical gates.
 
 ## Test-driven release milestones
 

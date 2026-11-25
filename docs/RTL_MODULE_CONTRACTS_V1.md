@@ -1,6 +1,6 @@
 # RTL Module Contracts V1 — detailed implementation handoff
 
-**Status: specification, not implemented RTL.** All named blocks below are proposed synthesizable modules. See [RTL system design](RTL_SYSTEM_DESIGN_V1.md) and [binary protocol/model image](V1_PROTOCOL_AND_MODEL_IMAGE.md).
+**Status: design contracts.** See [implemented RTL](V1_IMPLEMENTATION.md) for module consolidation, memory prefetch, and verified behaviour.
 
 ## 1. Clock, reset and handshakes
 

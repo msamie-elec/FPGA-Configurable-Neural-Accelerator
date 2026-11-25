@@ -1,6 +1,6 @@
 # FPGA NPU V1 — UART transport, binary model image and integer semantics
 
-**Status: precise design specification, NOT IMPLEMENTED.** Golden byte-level vectors and HDL tests must validate this contract before claiming a completed model loader. This document supersedes conceptual JSON-only examples elsewhere in the repository.
+**Status: V1 protocol specification.** See [implemented response layouts and input lifecycle](V1_IMPLEMENTATION.md#response-layouts) and [verification results](V1_VERIFICATION_RESULTS.md).
 
 ## 1. UART frame format
 
