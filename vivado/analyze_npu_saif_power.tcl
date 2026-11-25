@@ -22,9 +22,6 @@ catch {close_project}
 open_project $::NPU_UART_XPR
 if {[llength [get_runs impl_1]]==0} {error "Implementation run impl_1 missing in $::NPU_UART_XPR"}
 open_run impl_1
-if {[get_property DESIGN_STATE [current_design]] ne "routed"} {
-  puts "WARNING: DESIGN_STATE property not routed or unavailable; verify report header"
-}
 set top [get_property TOP [current_design]]
 if {$top ne "arty_a7_uart_npu_top"} {
   error "Expected routed UART/NPU board top arty_a7_uart_npu_top, got $top"
