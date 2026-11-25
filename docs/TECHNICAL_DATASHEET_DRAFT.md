@@ -74,3 +74,7 @@ The UART protocol includes a byte XOR checksum; CRC and timeout/recovery hardeni
 - **Reliability:** a hardware endurance runner and RTL protocol fault tests are now present, but the new campaign has not yet been physically run. The XOR checksum and missing partial-message timeout limit current transport robustness.
 
 The authoritative evidence review and scope are documented in [Verification Report](VERIFICATION_REPORT.md). No claim of an AXI interface, functional safety qualification, or trained model accuracy is made.
+
+## Activity-aware power characterization (pending Vivado validation)
+
+The 25-Nov-2026 routed UART/NPU tool-estimated baseline is **80 mW on-chip** (18 mW dynamic / 62 mW static) with **Medium** confidence and no SAIF. A new experimental three-window RTL SAIF workflow for idle, model loading and sustained compute has been added. It has **not yet produced verified annotated Vivado reports**. The design's physical watts, joules per inference and measured GOPS/W remain unknown. See [three-phase power evaluation](SAIF_POWER_WORKFLOW.md).
