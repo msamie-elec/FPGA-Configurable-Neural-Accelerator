@@ -9,7 +9,7 @@ This repository focuses **exclusively on reusable neural-network inference hardw
 | C. Serial FPGA demonstration | Real USB-UART programming and valid bit-exact inference | PASS one medium-sized network case |
 | D. Hardware benchmark | Three network sizes, 100+ transactions each, per-case CSV and percentiles | BENCHMARK TOOL ADDED; real run pending |
 | E. Reliability | Randomized long-run 1,000+ operations, malformed commands and reset/recovery | Pending |
-| F. Core-cycle timing | FPGA cycle counter, core-only latency and effective GOPS | Pending |
+| F. Inference timing | FPGA UART dispatch-to-valid cycle counter and optional benchmark telemetry | Implemented in RTL/host; new bitstream physical measurement pending |
 | G. Power methodology | Vivado estimate separated from measured power and energy | Pending |
 | H. Portfolio release | Evidence table, architecture, screenshots, limitations, clean clone/rebuild | In progress |
 
