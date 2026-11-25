@@ -82,3 +82,16 @@ py -m bearing.gui
 The model manifest is `build/bearing/trained/bearing_model.json` and the authentic held-out measurements are `build/bearing/trained/held_out_examples.csv`. Both remain **local** and are excluded from Git. Physical device programming uses the existing UART bitstream and an independent fixed-point Python comparison.
 
 Evaluation: split by physical bearing ID (never random recording windows), calculate preprocessing only using training rows, select integer candidates on held-out **validation** bearings, then calculate held-out test metrics once. The fixed-point model uses **global per-layer arithmetic shift** and has a 2-logit final layer whose class-0 score is 0. A baseline float sklearn classifier is trained, then re-expressed as quantised FPGA weights and biases; report *quantised* validation/test metrics rather than float training metrics. The current acceptance flag is a preliminary quality gate, not industrial safety certification.
+
+## Direct raw-MAT ingestion (experimental parser)
+
+The script `bearing/convert_mat.py` provides a conservative MATLAB v5 parser for records with channel entries explicitly named `vibration_1` and `phase_current_1`, and requires exactly one matched numeric waveform for each. It preserves filenames, bearing specimen IDs, condition codes and window offsets in the feature table. MATLAB v7.3/HDF5 and unrecognised nested structures intentionally produce clear errors rather than guessed signal values.
+
+```powershell
+py -m pip install -r bearing/requirements.txt
+py -m bearing.convert_mat --input data/bearing/raw --labels bearing/labels.csv --output build/bearing/features.csv
+py -m bearing.train_export --features build/bearing/features.csv --output build/bearing/trained
+py -m bearing.gui
+```
+
+**The parser has only been tested using fabricated MATLAB files generated in unit tests.** A real original Paderborn MAT file must be inspected to validate actual channel naming and metadata. This parser has not been verified on the experimental recordings yet; do not claim real-data ingestion until this is done.
