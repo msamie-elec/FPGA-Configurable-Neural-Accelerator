@@ -80,3 +80,8 @@ iverilog -g2012 -Wall -s tb_npu_power_activity -o build/tb_npu_power_activity.vv
     rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv tb/tb_npu_power_activity.sv
 # XSim-specific $stop power windows are intentionally not executed in vvp.
 python3 -m py_compile scripts/summarize_saif_power.py
+
+# Quality gate for matched post-synthesis core SAIF measurements (mock reports).
+echo 'Validating netlist-power coverage screening (synthetic report fixtures) ...'
+python3 -m unittest discover -s tests -p 'test_netlist_saif_assessment.py' -v
+python3 -m py_compile scripts/assess_netlist_saif.py
