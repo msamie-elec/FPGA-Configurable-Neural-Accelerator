@@ -10,7 +10,7 @@ jobs:
       - name: Install Icarus Verilog
         run: sudo apt-get update && sudo apt-get install -y iverilog
       - name: Install bearing feature test dependencies
-        run: python3 -m pip install --break-system-packages 'numpy>=1.26,<3'
+        run: python3 -m pip install --break-system-packages 'numpy>=1.26,<3' 'scikit-learn>=1.4,<2'
       - name: Run self-checking regressions
         run: bash scripts/test.sh
       - name: Verify repository structure
