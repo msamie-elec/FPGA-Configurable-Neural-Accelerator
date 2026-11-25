@@ -18,6 +18,7 @@ phys_opt_design
 route_design
 write_checkpoint -force [file join $build routed.dcp]
 report_timing_summary -report_unconstrained -file [file join $build timing.rpt]
+report_timing -delay_type max -max_paths 20 -nworst 1 -file [file join $build setup_paths.rpt]
 report_utilization -hierarchical -file [file join $build utilization.rpt]
 report_power -file [file join $build power_estimate.rpt]
 report_drc -file [file join $build drc.rpt]
@@ -25,8 +26,12 @@ report_cdc -file [file join $build cdc.rpt]
 check_timing -verbose -file [file join $build check_timing.rpt]
 foreach type {max min} {
     set path [get_timing_paths -quiet -delay_type $type -max_paths 1]
-    if {[llength $path] == 0 || [get_property SLACK $path] < 0} {
-        error "Missing or failing $type timing. Review reports in $build."
+    if {[llength $path] == 0} {
+        error "No $type timing path found. Review reports in $build."
+    }
+    set slack [get_property SLACK $path]
+    if {$slack < 0} {
+        error "Post-route $type slack is $slack ns. Review reports in $build."
     }
 }
 write_bitstream -force [file join $build npu.bit]

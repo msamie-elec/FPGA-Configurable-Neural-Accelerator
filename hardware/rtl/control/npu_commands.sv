@@ -11,7 +11,9 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
         MODEL_INVALID=7, OUT_OF_RANGE=8, BAD_SEQUENCE=9, INPUT_INCOMPLETE=10,
         RESULT_NOT_READY=11;
     localparam [3:0] IDLE=0, IMAGE=1, INPUT_BYTES=2, CHECK_HEADER=3,
-        CHECK_DESC=4, BIAS_READ=5, CHECK_BIAS=6, RESULT_READ=7, RESULT_SAVE=8;
+        CHECK_DESC=4, BIAS_READ=5, CHECK_BIAS=6, RESULT_READ=7, RESULT_SAVE=8,
+        DESC_FETCH=9, DESC_PREP=10, DESC_LIMITS=11, COMMIT_REPLY=12,
+        BIAS_EVAL=13;
     localparam integer MAX_IMAGE=32+128+16384+4096+32;
     reg [3:0] state;
     reg [255:0] header, descriptors [0:3];
@@ -25,6 +27,15 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
     reg [8:0] page_index;
     reg [4:0] page_pos;
     reg [1:0] check_layer;
+    reg [255:0] check_desc;
+    reg [63:0] check_quant;
+    reg [15:0] check_expected_input;
+    reg check_final, commit_ok;
+    reg [14:0] check_weight_span;
+    reg [17:0] next_weights;
+    reg [13:0] next_biases;
+    reg [31:0] bias_limit;
+    reg bias_in_range;
     reg [8:0] check_neuron;
     reg [14:0] checked_weights;
     reg [12:0] checked_biases;
@@ -40,54 +51,48 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
         weight_bytes <= 16384 && weight_bytes[2:0] == 0 &&
         bias_bytes <= 4096 && bias_bytes[1:0] == 0 &&
         quant_bytes == {21'd0,layer_total,3'd0};
-    wire [14:0] desc_end = 15'd32 + desc_bytes[14:0];
-    wire [14:0] weight_end = desc_end + weight_bytes[14:0];
-    wire [14:0] bias_end = weight_end + bias_bytes[14:0];
+    reg [14:0] desc_end, weight_end, bias_end;
+    reg image_layout_valid;
     wire [14:0] weight_offset = image_pos - desc_end;
     wire [14:0] bias_offset = image_pos - weight_end;
     wire [14:0] quant_offset = image_pos - bias_end;
     wire [14:0] desc_offset = image_pos - 15'd32;
     wire [7:0] octet = payload[cursor[6:0]*8+:8];
-    wire weight_write = state == IMAGE && sane_layout && image_pos >= desc_end &&
+    wire weight_write = state == IMAGE && image_layout_valid && image_pos >= desc_end &&
         image_pos < weight_end;
-    wire bias_write = state == IMAGE && sane_layout && image_pos >= weight_end &&
+    wire bias_write = state == IMAGE && image_layout_valid && image_pos >= weight_end &&
         image_pos < bias_end;
 
     wire [1:0] engine_layer;
-    wire validating = state == CHECK_DESC || state == BIAS_READ || state == CHECK_BIAS;
-    wire [1:0] selected = validating ? check_layer : engine_layer;
-    wire [255:0] desc = descriptors[selected];
-    wire [63:0] quant = quants[selected];
-    wire [15:0] di = desc[47:32], dout = desc[63:48], stride = desc[175:160];
-    wire [31:0] dw = desc[95:64], db = desc[127:96], dq = desc[159:128];
+    wire validating_bias = state == BIAS_READ;
+    wire [255:0] desc = descriptors[engine_layer];
+    wire [63:0] quant = quants[engine_layer];
     wire [1:0] prior_layer = check_layer-2'd1;
-    wire [15:0] expected_input = check_layer == 0 ? first_input :
-        descriptors[prior_layer][63:48];
-    wire final_desc = {1'b0,check_layer}+3'd1 == layer_total;
-    wire [14:0] row_weight_span = dout[8:0] * stride[5:0];
-    wire [17:0] next_weights = {3'd0,checked_weights} + {row_weight_span,3'b0};
-    wire [13:0] next_biases = {1'b0,checked_biases} + {3'd0,dout[8:0],2'b0};
-    wire [9:0] rounded_dim = {1'b0,di[8:0]}+10'd7;
-    wire valid_desc = desc[7:0] == (final_desc ? 8'd2 : 8'd1) &&
-        desc[31:8] == 0 && desc[255:176] == 0 &&
-        di >= 1 && di <= 256 && dout >= 1 && dout <= 256 &&
-        di == expected_input && (!final_desc || dout == final_output) &&
-        stride == {9'd0,rounded_dim[9:3]} &&
-        dw == {17'd0,checked_weights} && db == {19'd0,checked_biases} &&
-        dq == {27'd0,check_layer,3'b0} &&
-        next_weights <= weight_bytes && next_biases <= bias_bytes &&
-        (!final_desc || (next_weights == weight_bytes && next_biases == bias_bytes)) &&
-        (final_desc ? quant == 0 :
-            (quant[63:37] == 0 && !quant[31] && quant[30:0] != 0));
+    wire [15:0] check_in = check_desc[47:32], check_out = check_desc[63:48],
+        check_stride = check_desc[175:160];
+    wire [9:0] rounded_dim = {1'b0,check_in[8:0]}+10'd7;
+    wire valid_desc = check_desc[7:0] == (check_final ? 8'd2 : 8'd1) &&
+        check_desc[31:8] == 0 && check_desc[255:176] == 0 &&
+        check_in >= 1 && check_in <= 256 && check_out >= 1 && check_out <= 256 &&
+        check_in == check_expected_input && (!check_final || check_out == final_output) &&
+        check_stride == {9'd0,rounded_dim[9:3]} &&
+        check_desc[95:64] == {17'd0,checked_weights} &&
+        check_desc[127:96] == {19'd0,checked_biases} &&
+        check_desc[159:128] == {27'd0,check_layer,3'b0} &&
+        next_weights <= {3'd0,weight_bytes[14:0]} &&
+        next_biases <= {1'b0,bias_bytes[12:0]} &&
+        (!check_final || (next_weights == {3'd0,weight_bytes[14:0]} &&
+                         next_biases == {1'b0,bias_bytes[12:0]})) &&
+        (check_final ? check_quant == 0 :
+            (check_quant[63:37] == 0 && !check_quant[31] && check_quant[30:0] != 0));
     wire engine_weight_rd, engine_bias_rd, engine_busy, engine_done;
     wire [10:0] engine_weight_addr;
     wire [9:0] engine_bias_addr;
     wire [63:0] weight_data;
     wire [31:0] bias_data, result_data, cycles, issues, word_reads;
-    wire [9:0] check_bias_addr = db[11:2]+{1'b0,check_neuron};
+    wire [9:0] check_bias_addr = check_desc[107:98]+{1'b0,check_neuron};
     wire [32:0] bias_magnitude = bias_data[31] ?
         -{1'b1,bias_data} : {1'b0,bias_data};
-    wire [32:0] bias_bound = bias_magnitude + {10'd0,di[8:0],14'd0};
     wire input_write = state == INPUT_BYTES;
     assign busy = engine_busy || start_engine;
     assign model_valid = committed;
@@ -97,11 +102,11 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
         weight_data, weight_offset[13:3],
         weight_write ? 8'b1 << weight_offset[2:0] : 8'b0, {8{octet}});
     packed_ram #(.AW(10), .BYTES(4)) bias_ram(clk, engine_bias_rd || state==BIAS_READ,
-        validating ? check_bias_addr : engine_bias_addr, bias_data, bias_offset[11:2],
+        validating_bias ? check_bias_addr : engine_bias_addr, bias_data, bias_offset[11:2],
         bias_write ? 4'b1 << bias_offset[1:0] : 4'b0, {4{octet}});
     dense_engine #(LANES) engine(clk, rst, start_engine,
-        layer_total[2:0], engine_layer, di[8:0], dout[8:0], stride[5:0], dw[13:3],
-        db[11:2], quant[30:0], quant[36:32], engine_weight_rd, engine_weight_addr,
+        layer_total[2:0], engine_layer, desc[40:32], desc[56:48], desc[165:160], desc[77:67],
+        desc[107:98], quant[30:0], quant[36:32], engine_weight_rd, engine_weight_addr,
         weight_data, engine_bias_rd, engine_bias_addr, bias_data, input_write,
         input_pos[7:0], octet, state==RESULT_READ, page_index[7:0], result_data,
         engine_busy, engine_done, cycles, issues, word_reads);
@@ -126,9 +131,8 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
     endtask
     task automatic reject_model;
         begin
-            loading <= 0;
-            model_error <= 1;
-            send_status(MODEL_INVALID);
+            commit_ok <= 0;
+            state <= COMMIT_REPLY;
         end
     endtask
 
@@ -147,6 +151,7 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
             reply_payload <= 0;
             previous_status <= 0;
             job_id <= 0;
+            image_layout_valid <= 0;
             image_pos <= 0;
             image_len <= 0;
             input_pos <= 0;
@@ -196,6 +201,7 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
                             ready_result <= 0;
                             model_error <= 0;
                             loading <= 1;
+                            image_layout_valid <= 0;
                             image_pos <= 0;
                             image_len <= payload[14:0];
                             expected_crc <= payload[63:32];
@@ -281,7 +287,15 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
                 IMAGE: begin
                     image_crc <= crc32(image_crc,octet);
                     if (image_pos < 32) header[image_pos[4:0]*8+:8] <= octet;
-                    else if (sane_layout) begin
+                    // All layout fields have arrived before byte 28. Form the
+                    // section ends while consuming the four reserved bytes.
+                    if (image_pos == 28) begin
+                        desc_end <= 15'd32 + desc_bytes[14:0];
+                        image_layout_valid <= sane_layout;
+                    end
+                    if (image_pos == 29) weight_end <= desc_end + weight_bytes[14:0];
+                    if (image_pos == 30) bias_end <= weight_end + bias_bytes[14:0];
+                    if (image_pos >= 32 && image_layout_valid) begin
                         if (image_pos < desc_end)
                             descriptors[desc_offset[6:5]][desc_offset[4:0]*8+:8] <= octet;
                         else if (image_pos >= bias_end && quant_offset < quant_bytes)
@@ -301,17 +315,36 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
                     if (cursor + 1 == chunk_end) send_status(OK);
                 end
                 CHECK_HEADER: begin
-                    if (!sane_layout || header[31:0] != 32'h3155504e ||
+                    if (!image_layout_valid || header[31:0] != 32'h3155504e ||
                         header[47:32] != 16'h0001 || header[63:56] != 0 ||
                         header[255:224] != 0 || first_input < 1 || first_input > 256 ||
                         final_output < 1 || final_output > 256 ||
-                        bias_end+quant_bytes != image_len) reject_model();
+                        bias_end+quant_bytes[14:0] != image_len) reject_model();
                     else begin
                         checked_weights <= 0;
                         checked_biases <= 0;
                         check_layer <= 0;
-                        state <= CHECK_DESC;
+                        state <= DESC_FETCH;
                     end
+                end
+                DESC_FETCH: begin
+                    check_desc <= descriptors[check_layer];
+                    check_quant <= quants[check_layer];
+                    check_expected_input <= check_layer == 0 ? first_input :
+                        descriptors[prior_layer][63:48];
+                    check_final <= {1'b0,check_layer}+3'd1 == layer_total;
+                    state <= DESC_PREP;
+                end
+                DESC_PREP: begin
+                    check_weight_span <= check_out[8:0] * check_stride[5:0];
+                    next_biases <= {1'b0,checked_biases} + {3'd0,check_out[8:0],2'b0};
+                    // INT32_MAX - (input_dim << 14).
+                    bias_limit <= {1'b0,(17'd131071 - {8'd0,check_in[8:0]}),14'h3fff};
+                    state <= DESC_LIMITS;
+                end
+                DESC_LIMITS: begin
+                    next_weights <= {3'd0,checked_weights} + {check_weight_span,3'b0};
+                    state <= CHECK_DESC;
                 end
                 CHECK_DESC: if (!valid_desc) reject_model();
                 else begin
@@ -320,18 +353,27 @@ module npu_commands #(parameter integer LANES=4, CLOCK_HZ=100000000)(
                     checked_biases <= next_biases[12:0];
                     state <= BIAS_READ;
                 end
-                BIAS_READ: state <= CHECK_BIAS;
-                CHECK_BIAS: if (bias_bound > 33'd2147483647) reject_model();
-                else if (check_neuron+1 < dout) begin
+                BIAS_READ: state <= BIAS_EVAL;
+                BIAS_EVAL: begin
+                    bias_in_range <= bias_magnitude <= {1'b0,bias_limit};
+                    state <= CHECK_BIAS;
+                end
+                CHECK_BIAS: if (!bias_in_range) reject_model();
+                else if (check_neuron+9'd1 < check_out[8:0]) begin
                     check_neuron <= check_neuron+1;
                     state <= BIAS_READ;
-                end else if (final_desc) begin
-                    committed <= 1;
-                    loading <= 0;
-                    send_status(OK);
+                end else if (check_final) begin
+                    commit_ok <= 1;
+                    state <= COMMIT_REPLY;
                 end else begin
                     check_layer <= check_layer+1;
-                    state <= CHECK_DESC;
+                    state <= DESC_FETCH;
+                end
+                COMMIT_REPLY: begin
+                    committed <= commit_ok;
+                    loading <= 0;
+                    model_error <= !commit_ok;
+                    send_status(commit_ok ? OK : MODEL_INVALID);
                 end
                 RESULT_READ: state <= RESULT_SAVE;
                 RESULT_SAVE: begin
