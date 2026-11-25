@@ -97,7 +97,7 @@ py host/gui.py
 
 Choose the actual COM port from Windows Device Manager; COM4 is only an example. The GUI defaults to COM3 but the value is editable. The FPGA must be programmed with **the new `arty_a7_uart_npu.bit`**, not the original switch/LED demo.
 
-The GUI supports model selection between 4→8→4→2, 8→16→8→2 and 32→32→32→32→8, loading signed INT8 demonstration weights via UART, up to 32 interactive signed INT8 sensor controls with mouse sliders/spinboxes and keyboard up/down arrows, one-click FPGA inference and per-class scores. Weight loading runs on a background thread so the GUI remains responsive.
+The GUI supports model selection between 4→8→4→2, 8→16→8→2 and 32→32→32→32→8, loading signed INT8 demonstration weights via UART, up to 32 interactive signed INT8 sensor controls with mouse sliders/spinboxes and keyboard up/down arrows, one-click FPGA inference and per-class scores. The **Preview in Python** button works without a connected FPGA, and a live FPGA run compares all returned scores and the predicted class bit-for-bit against the independent Python model. Weight loading runs on a background thread so the GUI remains responsive.
 
 **Important:** The automatically generated example weights are not trained on industrial data. FPGA classification scores therefore demonstrate arithmetic correctness, *not detection accuracy*. A future industrial demo needs representative sensor data, an actual trained/quantised model, independent labels and held-out accuracy metrics.
 
