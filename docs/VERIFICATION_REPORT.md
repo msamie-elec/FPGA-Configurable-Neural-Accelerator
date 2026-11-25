@@ -97,3 +97,10 @@ The repository demonstrates a working runtime-configurable signed INT8 neural ac
 The existing uploaded Vivado 2025.2.1 post-route UART/NPU report is a **vectorless** estimate: **0.080 W total on-chip**, **0.018 W dynamic**, **0.062 W device static**, **Medium confidence**, no simulation activity file and no matched activity nets. The reference source is summarized in `docs/results/uart_npu_vectorless_power_2026-11-25.json`.
 
 An experimental **three-phase XSim activity workflow** has now been implemented (see `docs/SAIF_POWER_WORKFLOW.md`): 100 MHz NPU-core idle, 4,096 weight + 128 bias writes, and 16 maximal-network inferences. It creates separate SAIF files and imports each into the matching routed UART/NPU netlist while logging unmatched nets and confidence. **No Vivado SAIF/XSim run result has been returned or validated.** It is wrong to promote estimated power or energy using these scripts until successful SAIF annotation is independently verified. It remains a tool power estimate, not electrical measurement.
+
+
+## 9. Matched post-synthesis netlist activity experiment (pending tool execution)
+
+The routed UART/NPU RTL-SAIF attempt reported **99/3,664 matched nets (~2.7%)** and phase estimates of 73 mW idle, 73 mW loading, 92 mW inference, all with Medium reported confidence. Since most activity remained probabilistically estimated, these results **cannot** be published as high-confidence phase-level power differences. They are retained as a methodological baseline.
+
+A reproducible **post-synthesis functional Verilog NPU netlist + matching checkpoint** experiment was introduced under `vivado/run_npu_netlist_power.tcl`. The simulator drives the same three-phase stimulus against the structural UNISIM netlist, and Vivado annotates the resulting SAIF onto the *identical* synthesized NPU checkpoint. This is an **OOC core-only power study**, separate from the integrated UART board, and it is **not** electrical metrology. No new estimates or coverage have been established in Windows Vivado yet. See `docs/NETLIST_POWER_WORKFLOW.md`.
