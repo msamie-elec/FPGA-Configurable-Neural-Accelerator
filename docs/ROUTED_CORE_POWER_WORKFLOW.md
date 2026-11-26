@@ -85,11 +85,27 @@ A further **full integrated UART/NPU post-route simulation** would require reali
 
 - [x] Independent routed core power pipeline and Python screening tool implemented.
 - [x] Automated Python parser/quality-gate tests included in GitHub CI.
-- [ ] Local Vivado 2025.2.1 placement/routing of OOC core verified.
-- [ ] Local post-route functional XSim simulation and three SAIF windows verified.
-- [ ] Local matched SAIF `report_power` and timing reports reviewed.
+- [x] Local Vivado 2025.2.1 placement/routing of OOC core verified (IP-9; +2.017 ns WNS, +0.181 ns WHS).
+- [x] Local post-route functional XSim simulation and three SAIF windows verified.
+- [x] Local matched SAIF `report_power` and timing reports reviewed: 1,471/2,653 nets, High confidence, activity-aware 74/76/78 mW idle/loading/inference.
 - [ ] Real electrical measurements performed.
 
 The scripts have **not** been run inside Vivado by the developer; unexpected tool-version/placement constraints must be diagnosed from your actual Tcl output.
 
 Reference: AMD [UG907, Vector (SAIF) Based Power Analysis](https://docs.amd.com/r/2025.1-English/ug907-vivado-power-analysis-optimization/Vector-SAIF-Based-Power-Analysis), [UG900, Post-implementation Simulation](https://docs.amd.com/r/2024.1-English/ug900-vivado-logic-simulation/Running-Post-Synthesis-and-Post-Implementation-Simulations).
+
+
+## IP-9 actual Vivado evidence (26 November 2026)
+
+The user ran this workflow in `FPGA-NN-Accelerator-IP-9` and supplied the routed checkpoint's report outputs. **Placement/routing PASS:** WNS **+2.017 ns**, WHS **+0.181 ns**, no failing endpoints, and **1,436 / 1,436 routable nets fully routed** (zero routing errors). **Resources:** **959 LUT**, **770 registers**, **12 DSP48E1**, **8 RAMB18E1**. The power report shows **1,471 / 2,653 nets matched = 55.4%**, with **High** Vivado overall confidence.
+
+| Operating phase | On-chip total estimate | Dynamic estimate | Device static estimate |
+|---|---:|---:|---:|
+| Vectorless baseline | 82 mW | 23 mW | 59 mW |
+| Idle | 74 mW | 15 mW | 59 mW |
+| Model loading | 76 mW | 17 mW | 59 mW |
+| Active inference | 78 mW | 19 mW | 59 mW |
+
+**Power-significant primitive behaviour:** BRAM estimated dynamic power increases from **7 mW idle to 9 mW loading**; DSP estimated dynamic power increases from a rounded **0 mW idle/loading to 2 mW during inference**. The same 1,471 design nets match in all phases. Results agree with the earlier post-synthesis core's *rounded* 74/76/78 mW values, but this does not prove zero routing overhead.
+
+The figures remain *activity-informed Vivado estimates*. Nearly 45% of nets lack direct annotation, the simulation is **functional without post-route SDF**, and no physical rail readings exist. The `docs/results/ip9_routed_core_power_2026-11-26.json` file preserves the extracted metrics and limitations; the operator's original Vivado reports should be retained as raw evidence in any publication package. Do **not** replace the UART board's 80 mW vectorless baseline with core-only values.
