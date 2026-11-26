@@ -96,3 +96,6 @@ iverilog -g2012 -Wall -s tb_npu_corner_cases -o build/tb_npu_corner_cases.vvp \
     rtl/npu_weight_bank.sv rtl/npu_scalable_core.sv \
     rtl/npu_accelerator_ip.sv tb/tb_npu_corner_cases.sv
 vvp build/tb_npu_corner_cases.vvp
+
+echo 'Auditing final documentation links and archived benchmark/power values ...'
+python3 scripts/audit_release.py
