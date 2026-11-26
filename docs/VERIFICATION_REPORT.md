@@ -109,3 +109,12 @@ A reproducible **post-synthesis functional Verilog NPU netlist + matching checkp
 ## 10. Post-route NPU core activity-aware power workflow — awaiting Vivado execution
 
 Source scripts in `vivado/run_npu_routed_power.tcl` generate an **OOC routed NPU** checkpoint and a matching post-route functional Verilog netlist for XSim SAIF activity analysis at 100 MHz. The three stimulus windows are idle, weight/bias loading and maximal-network inference. A new quality-gated report parser (`scripts/assess_routed_power.py`) analyses SAIF coverage, Vivado power figures and component assumptions. **No physical board power measurements, no SDF timing glitches and no successful Vivado post-route SAIF result have been established yet.** See `docs/ROUTED_CORE_POWER_WORKFLOW.md`. This is not equivalent to the routed UART demo's prior 80 mW vectorless report.
+
+
+## 11. IP-9 routed-core SAIF power verification — completed with qualifications
+
+The user ran the newly introduced **post-route, out-of-context NPU core** power verification in Vivado 2025.2.1 on 26 November 2026 and supplied `routed_power_assessment.json`, `timing_routed(9).rpt`, `utilization_routed(9).rpt`, `route_status.rpt` and the raw power-report ZIP. The core was **fully routed** (1,436 of 1,436 routable nets, zero routing errors). Timing at 100 MHz: **WNS +2.017 ns**, **WHS +0.181 ns**, zero failing setup/hold endpoints. Resources: **959 LUTs, 770 flip-flops, 12 DSP48E1, 8 RAMB18E1**.
+
+Functional post-route netlist SAIF matched **1,471 / 2,653 design nets = 55.4%**, Vivado overall confidence **High**. Rounded, phase-aware **estimated** on-chip power: **74 mW idle (15 mW dynamic)**, **76 mW loading (17 mW dynamic)**, **78 mW inference (19 mW dynamic)**, each with approximately 59 mW modelled full-FPGA device static power. Vectorless routed-core baseline 82 mW (23 mW dynamic). Model-loading BRAM estimate increased from 7 to 9 mW; inference DSP power increased from rounded 0 to 2 mW.
+
+**Scope:** routed **standalone NPU core**, not the integrated UART board or full packaged-IP consumer. Simulated functional netlist has **no SDF timing/glitch activity**, 44.6% of nets remain unannotated, and **no physical power or energy/inference has been measured**. The same rounded totals occurred in post-synthesis simulation but do not establish routing-free power. Preserved evidence summary: `docs/results/ip9_routed_core_power_2026-11-26.json`. This is sufficient for a **qualified engineering datasheet estimate**, not production or electrical-power sign-off.
