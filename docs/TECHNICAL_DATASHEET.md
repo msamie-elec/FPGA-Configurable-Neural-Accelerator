@@ -198,7 +198,7 @@ RTL source regressions (Icarus + Python)
 
 `build/` is **intentionally excluded from GitHub**; the canonical UART bitstream, synthesis checkpoints and power reports are locally generated. A fresh Vivado implementation can vary by tool version and optimisation. Record Git commit SHA, tool version, design revision, board revision, bitstream hash, constraints and raw reports when reproducing a particular measurement.
 
-For detailed integration instructions see [Start here](START_HERE.md), [IP port contract](IP_INTEGRATION.md), [verification report](VERIFICATION_REPORT.md) and [release evidence checklist](RELEASE_ACCEPTANCE.md).
+For detailed integration instructions see [Start here](START_HERE.md), [IP port contract](IP_INTEGRATION.md), [verification report](VERIFICATION_REPORT.md), [release evidence checklist](RELEASE_ACCEPTANCE.md), [bearing application handoff](BEARING_DEPLOYMENT_HANDOFF.md) and [release notes](RELEASE_NOTES.md).
 
 ---
 **Next integration:** [FPGA Bearing Condition Monitoring](https://github.com/msamie-elec/FPGA-Bearing-Condition-Monitoring). This link documents the **intended downstream deployment**; it does not establish that a trained bearing model is already running on the FPGA.
