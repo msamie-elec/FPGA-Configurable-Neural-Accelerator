@@ -88,3 +88,7 @@ An additional **matched post-synthesis core-only** SAIF workflow has been added 
 ## Post-route activity-aware power (pending)
 
 An independent routed-core power experiment is available in `vivado/run_npu_routed_power.tcl`, simulating the **matching routed functional Verilog netlist** for three phase-specific SAIF power estimates. The work is currently **unverified on Vivado 2025.2.1**. No numeric post-route SAIF power is yet approved for publication. This OOC NPU core estimate must not be presented as a measurement of the UART board, and functional simulation excludes SDF glitch activity. See `docs/ROUTED_CORE_POWER_WORKFLOW.md`.
+
+## IP-9 user-verified standalone routed-core activity-aware power
+
+Vivado 2025.2.1 routed core at 100 MHz: **WNS +2.017 ns**, **WHS +0.181 ns**, zero route errors, **959 LUT**, **770 FF**, **12 DSP48E1**, **8 RAMB18E1**. Post-route functional SAIF matched **1,471 / 2,653 nets (55.4%)**, with **High** reported confidence. Estimated on-chip power: **74 mW idle**, **76 mW loading**, **78 mW inference**; these contain approximately **59 mW modelled whole-device static power**, plus 15/17/19 mW dynamic respectively. **These are EDA power estimates, not physical measurements or measured energy per inference.** Functional netlist simulation excludes SDF glitch activity and remaining unmatched nets use estimated switching. This is an **OOC core** analysis, not the UART board. Reference: [IP-9 evidence](results/ip9_routed_core_power_2026-11-26.json).
