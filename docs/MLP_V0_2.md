@@ -1,3 +1,5 @@
+> **Historical milestone / superseded architecture.** This describes an earlier v0.2 experiment, not the current packaged NPU. See the [canonical datasheet](TECHNICAL_DATASHEET.md) and [current architecture](ARCHITECTURE.md).
+
 # V0.2 configurable MLP core (experimental)
 
 This standalone compute subsystem is implemented in `rtl/mlp_engine.sv`. It does **not replace** the validated Arty A7 switch/LED top-level. It must pass GitHub CI and a separate Vivado synthesis/route before hardware integration.

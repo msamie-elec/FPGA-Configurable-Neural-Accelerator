@@ -1,120 +1,106 @@
-# Independent Verification Report — FPGA Configurable Neural Accelerator
+# FPGA Configurable Neural Accelerator — Verification Report
 
-**Engineering evidence review, 25 November 2026.** Status: verified development demonstrator; **not** safety/production qualified.
+**Revision:** 26 November 2026 · **Scope:** Arty A7-35T hardware demonstrator, application-independent packaged IP and separate core power studies  
+**Verdict:** **Engineering-verified development demonstrator, with explicit limitations**. Not formally proven bug-free, safety-certified, production qualified, trained for a real bearing dataset, or physically power-characterised.
 
-## 1. System boundaries
+This document records **what was actually exercised**. It distinguishes CI software simulation, reported FPGA implementation, observed physical-board experiments, analytical calculations and EDA estimates. Use the [technical datasheet](TECHNICAL_DATASHEET.md) for the complete interface and numerical specification.
 
-Two distinct demonstrators are built from the same accelerator:
-- **UART/GUI board top**: arty_a7_uart_npu_top, USB UART 115200 8N1; used for Python model programming, bit-exact physical tests and core-cycle telemetry.
-- **Reusable IP consumer**: Vivado packaged npu0 inside arty_a7_ip_consumer_top; internal programmed stimulus and LED digest, with no UART. Used for independent routed timing and IP resource attribution.
+## 1. Tested implementation boundaries
 
-Do not run the UART Python benchmark with the autonomous IP-consumer bitstream. That produces an expected serial timeout, not a broken IP.
+| Track | Top / element | Purpose | What it does **not** establish |
+|---|---|---|---|
+| **UART/GUI reference board** | `arty_a7_uart_npu_top` | Host-programmable model, 115200-baud frame exchange, FPGA cycle timing, physical score parity | AXI interface, physical-power measurement, industrial UART robustness |
+| **IP Catalog integration** | `npu_accelerator_ip` in `arty_a7_ip_consumer_top` | IP-XACT packaging, independent consumer synthesis, 100 MHz timing, hierarchical resources | UART endpoint; application-specific trained classifier |
+| **Post-synthesis OOC core** | `npu_scalable_core` | Matching synthesis netlist/SAIF estimates | Post-route timing or board watts |
+| **Post-route OOC core** | `npu_scalable_core` | Matched routed core netlist/SAIF, timing/resources/power estimate | Full integrated UART system power or measured electrical watts |
 
-## 2. Physical FPGA benchmark — traceable source data
+The **UART demo** and **autonomous IP consumer** generate different bitstreams. Programming the latter and using a Python UART host is an invalid test setup; the consumer has no UART RX/TX.
 
-Test hardware: Digilent Arty A7-35T, 100 MHz. Numeric oracle: separate signed INT8/INT32 fixed-point Python implementation; deterministic test weights, **not a trained classifier**.
+## 2. Functional RTL and software regression
 
-| Network | MACs/inference | Hardware cycles | FPGA µs | Effective GOPS | 25 Nov initial matches |
-|---|---:|---:|---:|---:|---:|
-| 4→8→4→2 | 72 | 114 | 1.14 | 0.1263 | 100/100 |
-| 8→16→8→2 | 272 | 250 | 2.50 | 0.2176 | 100/100 |
-| 32→32→32→32→8 | 3,328 | 2,394 | 23.94 | 0.2780 | 100/100 |
+The repository's `bash scripts/test.sh` is executed in GitHub Actions and comprises, among others:
 
-Initial benchmark: docs/results/arty_a7_benchmark_2026-11-25.json (inspectable raw measurements).
-
-**Later user-reported repeatability run:** 1,000/1,000 successful results for **each** network, 3,000/3,000 total; measured p95 UART response 16.284, 16.317 and 15.504 ms. This was supplied as a PowerShell screenshot; the original 3,000-case JSON and transaction CSV files have **not** yet been committed. This is a repeatability result, not a statistical lifetime-reliability guarantee.
-
-Compute time: hardware cycle count from UART inference dispatch to NPU valid, including small command-handshake overhead but **excluding** transport. Effective GOPS uses two operations per logical MAC, from that interval. UART mean (~15–16 ms) includes PC, USB, framed UART transfer, reply and FPGA compute; UART limits single-stream transactions to roughly 63–65/s. The core-only reciprocal-of-cycles rate is an analytical nonoverlap ceiling, not measured sustained UART throughput.
-
-## 3. Independent packaged IP — routed implementation
-
-Reported user-provided Vivado 2025.2.1 Artix-7-35T **100 MHz** consumer implementation:
-- Setup worst slack: **+2.006 ns**.
-- Hold worst slack: **+0.043 ns**.
-- Hierarchical NPU IP instance: **811 LUTs**, **709 flip-flops**, **8 RAMB18**, **12 DSP48E1**.
-- Total independent consumer: **862 LUTs**, **1,025 FFs**, **8 RAMB18**, **12 DSP48E1**.
-- Estimated device on-chip power: **78 mW** (roughly 62 mW static and 16 mW dynamic), **not physical metered power**, medium-confidence Vivado estimate without realistic switching annotation.
-
-This is a routed **consumer+IP** timing proof and a hierarchical utilisation breakdown, not an independently characterised abstract-IP Fmax or an electrical-power measurement. Vivado methodology recommendations and unconstrained LED outputs remain for review.
-
-Earlier UART/NPU build showed approximately **1,276 LUTs, 1,645 FFs, 8 BRAM18, 12 DSP**, with 100 MHz setup and hold closure. The different wrapper/controller account for differing numbers. Use exact report/binary revision when reproducing.
-
-## 4. Functional, negative and integration verification
-
-| Gate | Evidence | Status |
+| Test / control | Coverage supplied | Status |
 |---|---|---|
-| NPU arithmetic | 48 golden RTL reference vectors, signed INT8 arithmetic, topologies | PASS in CI |
-| UART framing and model control | Existing UART bit-level TB and host protocol tests | PASS in CI |
-| UART error injection | New test: unknown command, corrupted weight checksum, invalid topology and recovery, partial frame reset | **TEST ADDED**; verify CI result |
-| FPGA numerical comparisons | 300/300 archived + 3,000/3,000 user-reported | PASS observed |
-| IP-XACT packaging, catalog and consumer creation | component.xml, VLNV and npu0.xci generated in user Vivado | PASS |
-| Reusable IP OOC synthesis | Prior Vivado synth successful | PASS |
-| Independent consumer 100 MHz routed implementation | Above slack and resources | PASS observed |
-| Automatic 10k+ hardware soak | New operator-run script; physical evidence not yet collected | PENDING |
-| Physical reset-during-inference and serial fault recovery | No physical instrumented run; current RTL has no incomplete-packet timeout | PENDING |
-| Power/energy measurement | Tool estimate only; optional meter CSV analyser added | PENDING physical data |
-| AXI interface | Not present; NPU exposes native synchronous ports | NOT SUPPORTED |
+| Base arithmetic and random v0.1 tests | Standalone original accelerator arithmetic | **CI PASS** |
+| 1/4/8-lane MLP engine | Earlier pipelined/parallel architecture | **CI PASS** |
+| Scalable NPU | **48 independent Python-golden cases** across 4→8→4→2, 8→16→8→2 and 32→32→32→32→8; entire logits and class compared | **CI PASS** |
+| Reusable IP port wrapper | 48 Python-golden cases via `npu_accelerator_ip` | **CI PASS** |
+| Directed external IP edge cases | Signed positive/negative scores, zero/tie lowest-index argmax, illegal dimensions, ignored weight write while busy, reset and persistence of programmed memory | **CI PASS** |
+| UART driver, parser and controller | Framing, model programming, checksum/cycle telemetry, valid replies | **CI PASS** |
+| UART negative responses | Corrupted weight-write XOR, unknown command, rejected topology with recovery, partial-frame parser reset | **CI PASS** |
+| Autonomous IP-consumer stimulus | 4,096 weight slots, 128 bias addresses, two maximum-configuration inferences in RTL simulation | **CI PASS** |
+| Host/reference/performance/reporting | Python parsing, benchmark metrics, report quality checks and mocked reliability campaigns | **CI PASS** |
 
-## 5. New reproducible test suites
+A finite self-checking regression demonstrates coverage of the listed scenarios; it **does not prove absence of undiscovered RTL bugs**. The core is also not a formally model-checked implementation, and there is no assertion of complete branch/corner coverage. Reference fixtures are deterministic and are **not trained industrial models**.
 
-### Offline regression (no FPGA required)
+### Important negative-test boundaries
 
-~~~bash
-bash scripts/test.sh
-~~~
+The physical UART link has **no partial-frame receive timeout**, uses a simple XOR checksum rather than a CRC, and does not atomically validate an entire model image. A reset-recovery test is not evidence that truncated frames recover **without** reset. The core does not track whether all active weight/bias locations have been programmed. Design owners must require complete model loading and appropriate system interlocks before treating outputs as meaningful.
 
-Includes RTL corruption/recovery simulation, long-run runner mock tests and power-analysis arithmetic mock tests. These **do not** establish physical error rates or physical rail power.
+## 3. Physical Arty A7 functional and latency evidence
 
-### Physical endurance / repeated reprogramming
+**Archived source:** [`docs/results/arty_a7_benchmark_2026-11-25.json`](results/arty_a7_benchmark_2026-11-25.json). Tested on Arty A7-35T using UART/NPU bitstream with cycle telemetry and an independent Python signed fixed-point oracle.
 
-With the **UART/NPU** bitstream, close GUI and other COM port tools:
+| Topology | MACs | Exact output/class comparisons | FPGA reported dispatch-to-valid cycles | FPGA equivalent at 100 MHz | Effective useful GOPS |
+|---|---:|---:|---:|---:|---:|
+| 4→8→4→2 | 72 | **100/100** | 114 | 1.14 µs | 0.1263 |
+| 8→16→8→2 | 272 | **100/100** | 250 | 2.50 µs | 0.2176 |
+| 32→32→32→32→8 | 3,328 | **100/100** | 2,394 | 23.94 µs | 0.2780 |
 
-~~~powershell
-py host/reliability_campaign.py --port COM4 --model all --count 1000 --reload-every 250 --output build/reliability
-~~~
+The **300/300** cases are present as the archived benchmark summary, not archived per-transaction input/vector files. A subsequent **3,000/3,000 user-reported physical result** (1,000 each topology) was observed with UART p95 **16.284/16.317/15.504 ms**, but the detailed raw logs are **not committed**. The endurance tool has additionally been run successfully for repeated model loading, per user report, but the full event log/summary is not archived. Distinguish these observations from an automated release CI run.
 
-This records per-case input, oracle scores, actual FPGA scores, class, elapsed UART ms and FPGA cycle counts in JSONL, plus per-model and overall summary JSON. **No automatic reset or malformed packet injection is performed on real hardware.** The campaign aborts on transport exception rather than blindly retrying. To explore longer endurance, raise count; do not report success unless the actual full run completes with zero mismatches and zero transport errors.
+Definitions: the hardware cycle counter starts at UART inference dispatch and stops on accelerator valid. At 100 MHz `microseconds = cycles/100`. Useful GOPS = `2 × logical MACs × 100 MHz / cycles / 1e9`. Typical PC/USB/UART response time is **~15–16 milliseconds**, including transport/host overhead, **not** the FPGA compute time. The ideal reciprocal-of-core latency is analytical, **not measured sustained end-to-end transactions/s**.
 
-### Power
+No FPGA bitstream SHA256, board serial number, environmental corner sweep or original full 3,000-case transaction archives are included in these published benchmark summaries. The successful sample counts alone cannot establish an operational field failure rate.
 
-Follow docs/POWER_MEASUREMENT.md. Optional physical electrical readings can be analysed via scripts/assess_power.py; if no readings, physical power, energy and GOPS/W remain **not measured**.
+## 4. Vivado implementation and timing
 
-## 6. Remaining engineering risks and evidence requirements
+| Distinct routed build | Setup WNS | Hold WHS | Mapped resources | Evidence limitation |
+|---|---:|---:|---|---|
+| Independent packaged-IP **consumer**, 100 MHz | **+2.006 ns** | **+0.043 ns** | IP hierarchy: **811 LUT, 709 FF, 8 BRAM18, 12 DSP48E1**; whole consumer **862 LUT, 1,025 FF, 8 BRAM18, 12 DSP48E1** | Valid for the representative consumer/top only |
+| Standalone **OOC routed core** (IP-9), 100 MHz | **+2.017 ns** | **+0.181 ns** | **959 LUT, 770 FF, 8 BRAM18, 12 DSP48E1** | Standalone core implementation; not UART board |
+| Prior UART/NPU board build | Positive setup/hold at 100 MHz | Positive | Approx. **1,276 LUT, 1,645 FF, 8 BRAM18, 12 DSP** | Different wrapper and build; no universal macro Fmax |
 
-1. **UART lacks partial-packet timeout**; incomplete frames can block parser progress until reset or enough bytes arrive. An isolated reset-recovery simulation is not proof of safe live fault recovery.
-2. Framing uses an XOR checksum, weaker than CRC for multi-bit errors; evaluate versioned CRC, timeout and model-write transaction integrity for production use.
-3. FPGA model memories are uninitialised until software programmes every active address. Invalid or incomplete model loading requires stronger interlocks before unsupervised operation.
-4. The user-submitted repeatability run is evidenced by terminal output only until its full CSV/JSON is archived.
-5. No power meter, SAIF activity-annotated estimate, energy/inference or independent matched multi-lane architecture comparison is available.
-6. IP port contract is synchronous and unbundled; not AXI or an independently certified functional safety IP.
+The IP-9 routed core report recorded **1,436 / 1,436 routable nets fully routed**, with zero routing errors and no failing timing endpoints. Packaging/catalog discovery and independent consumer implementation were executed in user Vivado 2025.2.1; these vendor operations are **not run in Linux CI**. No automatic equivalence check between every generated bitstream and the corresponding source commit hash has been performed.
 
-## 7. Conclusion
+See the [integration guide](IP_INTEGRATION.md) and [IP consumer report procedure](IP_CONSUMER_IMPLEMENTATION.md).
 
-The repository demonstrates a working runtime-configurable signed INT8 neural accelerator, physical 100 MHz compute-cycle telemetry, bit-exact UART/FPGA validation, and a reusable Vivado IP passing consumer integration timing. It is suitable to present as a **measured, engineering-verified FPGA IP demonstrator**, with explicit reliability/power and production-readiness limitations. Do not claim commercial safety assurance or trained-model accuracy.
+## 5. Power characterisation
 
-## 8. Added activity-aware power characterization workflow (unexecuted)
+**All figures are EDA-estimated on-chip device power, not electrical measurements.**
 
-The existing uploaded Vivado 2025.2.1 post-route UART/NPU report is a **vectorless** estimate: **0.080 W total on-chip**, **0.018 W dynamic**, **0.062 W device static**, **Medium confidence**, no simulation activity file and no matched activity nets. The reference source is summarized in `docs/results/uart_npu_vectorless_power_2026-11-25.json`.
+| Method | SAIF match | Idle total/dynamic | Loading total/dynamic | Inference total/dynamic | Confidence |
+|---|---|---|---|---|---|
+| RTL-core activity into independently routed UART system (exploratory) | **99/3,664 (2.7%)** | 73/11 mW | 73/11 mW | 92/30 mW | Medium; **not reliable for quantitative phase comparison** |
+| Identical source post-synthesis OOC core netlist/checkpoint | **1,471/2,771 (53.1%)** | 74/15 mW | 76/17 mW | 78/19 mW | High overall Vivado; incomplete mapping |
+| **Routed** OOC core matched netlist/checkpoint (IP-9) | **1,471/2,653 (55.4%)** | **74/15 mW** | **76/17 mW** | **78/19 mW** | High overall Vivado; 44.6% unmapped |
 
-An experimental **three-phase XSim activity workflow** has now been implemented (see `docs/SAIF_POWER_WORKFLOW.md`): 100 MHz NPU-core idle, 4,096 weight + 128 bias writes, and 16 maximal-network inferences. It creates separate SAIF files and imports each into the matching routed UART/NPU netlist while logging unmatched nets and confidence. **No Vivado SAIF/XSim run result has been returned or validated.** It is wrong to promote estimated power or energy using these scripts until successful SAIF annotation is independently verified. It remains a tool power estimate, not electrical measurement.
+In the **IP-9 routed OOC core**, modelled **device-static power ~59 mW** is included in all total figures. It represents the **entire FPGA device**, even though the study isolated an NPU core. The rounded estimates show BRAM switching rising during model loading (7→9 mW) and DSP switching rising during inference (rounded 0→2 mW). This is consistent with workload-dependent switching, **not proof of accurate whole-device activity or electrical energy**.
 
+The post-route simulation was **functional without SDF delay/glitch backannotation** and has **44.6%** unmatched design nets. The older full UART/NPU *vectorless* reference estimate was **80 mW total** (18 mW dynamic / 62 mW static). It is a **different circuit and analysis boundary** from the core-only IP-9 figures.
 
-## 9. Matched post-synthesis netlist activity experiment (pending tool execution)
+The [IP-9 source-attributed result](results/ip9_routed_core_power_2026-11-26.json) preserves routed timing, resource and power metrics. External rail measurements, energy per inference and measured GOPS/W remain **unavailable**.
 
-The routed UART/NPU RTL-SAIF attempt reported **99/3,664 matched nets (~2.7%)** and phase estimates of 73 mW idle, 73 mW loading, 92 mW inference, all with Medium reported confidence. Since most activity remained probabilistically estimated, these results **cannot** be published as high-confidence phase-level power differences. They are retained as a methodological baseline.
+## 6. Industrial readiness / unresolved work
 
-A reproducible **post-synthesis functional Verilog NPU netlist + matching checkpoint** experiment was introduced under `vivado/run_npu_netlist_power.tcl`. The simulator drives the same three-phase stimulus against the structural UNISIM netlist, and Vivado annotates the resulting SAIF onto the *identical* synthesized NPU checkpoint. This is an **OOC core-only power study**, separate from the integrated UART board, and it is **not** electrical metrology. No new estimates or coverage have been established in Windows Vivado yet. See `docs/NETLIST_POWER_WORKFLOW.md`.
+| Area | Position |
+|---|---|
+| Signed arithmetic, model programming and monitored UART inference | **Verified for tested cases and hardware samples** |
+| Reusable Vivado IP packaging and independent consumer timing | **Observed PASS** |
+| FPGA core 100 MHz timing and post-route SAIF engineering estimates | **Observed PASS with stated power coverage limits** |
+| Truncated UART packet recovery without reset | **Not implemented** |
+| CRC, versioned framing, atomic model authentication/image integrity | **Not implemented** |
+| Formal equivalence and exhaustive RTL corner checking | **Not performed** |
+| Physical reset/reconnection/cable faults, multiple boards, environmental/EMI testing | **Not established** |
+| Metered power, true measured joules/inference or GOPS/W | **Not measured** |
+| Bearing task-model accuracy, held-out specimen testing and false alarm rates | **Not established** |
+| Production or functional-safety certification | **Not claimed** |
 
+## 7. Final assessment and downstream deployment
 
-## 10. Post-route NPU core activity-aware power workflow — awaiting Vivado execution
+The repository is technically defensible as a **reusable, hardware-demonstrated INT8 FPGA inference accelerator IP**, provided users follow its memory, interface and transport limitations. It is **not** accurate to describe the current system as a production-qualified, bug-free, fault-tolerant or application-trained industrial bearing classifier.
 
-Source scripts in `vivado/run_npu_routed_power.tcl` generate an **OOC routed NPU** checkpoint and a matching post-route functional Verilog netlist for XSim SAIF activity analysis at 100 MHz. The three stimulus windows are idle, weight/bias loading and maximal-network inference. A new quality-gated report parser (`scripts/assess_routed_power.py`) analyses SAIF coverage, Vivado power figures and component assumptions. **No physical board power measurements, no SDF timing glitches and no successful Vivado post-route SAIF result have been established yet.** See `docs/ROUTED_CORE_POWER_WORKFLOW.md`. This is not equivalent to the routed UART demo's prior 80 mW vectorless report.
+The next planned deployment is [**FPGA Bearing Condition Monitoring**](https://github.com/msamie-elec/FPGA-Bearing-Condition-Monitoring). The application repository manages actual vibration/current measurements, feature extraction, bearing-level train/test separation, quantisation and the monitoring UI. Its intended 8→16→8→2 network fits this IP. **A bearing classifier running this FPGA bitstream with measured-data validation has not yet been demonstrated.**
 
-
-## 11. IP-9 routed-core SAIF power verification — completed with qualifications
-
-The user ran the newly introduced **post-route, out-of-context NPU core** power verification in Vivado 2025.2.1 on 26 November 2026 and supplied `routed_power_assessment.json`, `timing_routed(9).rpt`, `utilization_routed(9).rpt`, `route_status.rpt` and the raw power-report ZIP. The core was **fully routed** (1,436 of 1,436 routable nets, zero routing errors). Timing at 100 MHz: **WNS +2.017 ns**, **WHS +0.181 ns**, zero failing setup/hold endpoints. Resources: **959 LUTs, 770 flip-flops, 12 DSP48E1, 8 RAMB18E1**.
-
-Functional post-route netlist SAIF matched **1,471 / 2,653 design nets = 55.4%**, Vivado overall confidence **High**. Rounded, phase-aware **estimated** on-chip power: **74 mW idle (15 mW dynamic)**, **76 mW loading (17 mW dynamic)**, **78 mW inference (19 mW dynamic)**, each with approximately 59 mW modelled full-FPGA device static power. Vectorless routed-core baseline 82 mW (23 mW dynamic). Model-loading BRAM estimate increased from 7 to 9 mW; inference DSP power increased from rounded 0 to 2 mW.
-
-**Scope:** routed **standalone NPU core**, not the integrated UART board or full packaged-IP consumer. Simulated functional netlist has **no SDF timing/glitch activity**, 44.6% of nets remain unannotated, and **no physical power or energy/inference has been measured**. The same rounded totals occurred in post-synthesis simulation but do not establish routing-free power. Preserved evidence summary: `docs/results/ip9_routed_core_power_2026-11-26.json`. This is sufficient for a **qualified engineering datasheet estimate**, not production or electrical-power sign-off.
+**Release references:** [Datasheet](TECHNICAL_DATASHEET.md) · [Release checklist](RELEASE_ACCEPTANCE.md) · [Start here](START_HERE.md) · [Routed core power](ROUTED_CORE_POWER_WORKFLOW.md).

@@ -13,7 +13,7 @@ The improved experiment uses **one source-identical post-synthesis functional Ve
 In your **current single GitHub checkout**, from a fresh Vivado session, run:
 
 ```tcl
-cd {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/FPGA-NN-Accelerator-IP-7}
+cd {C:/FPGA/NPU}
 source vivado/run_npu_netlist_power.tcl
 ```
 
@@ -74,13 +74,13 @@ Unlike the previous routed-UART power script, **this core-only flow intentionall
 
 - [x] Source scripts and Python quality-gate unit tests added to GitHub.
 - [x] Existing core testbench structure used with an unchanged RTL/port contract.
-- [ ] Vivado **post-synthesis functional netlist** created successfully on Windows 2025.2.1.
-- [ ] XSim UNISIM functional simulation completed all three phases on the **netlist**, not RTL.
-- [ ] SAIF files matched against same synthesized checkpoint and coverage reported.
-- [ ] Power-significant DSP/BRAM/clock activity inspected.
+- [x] Vivado **post-synthesis functional netlist** generated in the user IP-8 run.
+- [x] XSim functional netlist simulation completed all three phases (user IP-8 run).
+- [x] Post-synthesis core SAIF matched **1,471/2,771 nets (53.1%)**, overall High Vivado confidence.
+- [x] Phase activity reviewed: BRAM rises in loading, DSP rises in inference; **44–47% of nets remain unannotated**.
 - [ ] Physical device power and energy/inference measured.
 
-The last four verification stages cannot be established by a Linux Icarus regression. Please return the Tcl Console outputs and `build/netlist_power/netlist_power_assessment.json`, plus the unmatched files. Only then should the final datasheet incorporate improved phase power figures.
+The **Vivado-specific stages were executed by the user in Vivado 2025.2.1**, not by the GitHub Linux regression. They remain bounded by incomplete net matching and no physical rail measurement. Please return the Tcl Console outputs and `build/netlist_power/netlist_power_assessment.json`, plus the unmatched files. Only then should the final datasheet incorporate improved phase power figures.
 
 ## Source references
 
@@ -89,3 +89,6 @@ The last four verification stages cannot be established by a Linux Icarus regres
 - [AMD UG835, read_saif](https://docs.amd.com/r/2022.2-English/ug835-vivado-tcl-commands/read_saif).
 
 The scripts are experimental until run and inspected in the reference Vivado version. This is an engineering study, not production or safety qualification.
+
+
+**Latest status:** The post-synthesis IP-8 OOC core activity estimates were **74/76/78 mW** for idle/loading/inference, with 53.1% SAIF net matching and High overall Vivado confidence. The subsequently completed **post-route** IP-9 OOC core method reports 55.4% mapping and the same rounded phase totals. Neither is a physical power measurement. See [canonical datasheet](TECHNICAL_DATASHEET.md).

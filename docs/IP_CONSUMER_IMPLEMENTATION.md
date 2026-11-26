@@ -36,7 +36,7 @@ The reports are written to `build/ip_consumer_implementation/reports/`:
 | `power_estimated.rpt` | Estimated, not measured, FPGA power |
 | `npu_consumer_routed.dcp` | Inspectable routed design checkpoint |
 
-The script fails if WNS/WHS are negative or an unexpectedly low DSP/BRAM count suggests the NPU was optimised out. All reports are created even if timing fails. **This flow has not yet been executed in Windows Vivado and must not be advertised as passing until the results are returned.** The script may need adjustment for Vivado tool-specific issues.
+The script fails if WNS/WHS are negative or an unexpectedly low DSP/BRAM count suggests the NPU was optimised out. All reports are created even if timing fails. **User Vivado 2025.2.1 implementation has now been executed successfully.** The representative consumer met 100 MHz routed timing (WNS **+2.006 ns**, WHS **+0.043 ns**). The packaged IP instance used **811 LUT, 709 FF, 8 BRAM18 and 12 DSP48E1**; the full consumer used **862 LUT, 1,025 FF, 8 BRAM18 and 12 DSP48E1**. Review any new tool-version warnings rather than assuming the previously routed implementation applies to all builds.
 
 ## Simulator smoke for consumer control (CI)
 
@@ -57,6 +57,6 @@ This does not replace the IP's independent **48-golden-vector** functional regre
 - IP has **no AXI ports** and is not an AXI4 IP until a genuine adapter is designed/verified.
 - On-chip power is a Vivado estimate; test vectors and SAIF/power-meter readings are required for robust energy results.
 
-## Next evidence request
+## Additional evidence for future runs
 
-After running, provide `implementation_summary.txt`, `timing_routed.rpt`, `utilization_hierarchical.rpt`, `drc_routed.rpt`, and `methodology_routed.rpt`. Keep the old Arty A7 UART bitstream and previous 300/300 benchmark evidence intact.
+The named reports and raw implementation checkpoint should be saved alongside a Git commit/bitstream hash when reproducing a new build. The existing UART bitstream and earlier physical benchmark remain separate.

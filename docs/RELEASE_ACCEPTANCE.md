@@ -1,32 +1,35 @@
-# FPGA accelerator release gate and evidence manifest
+# Engineering release acceptance — FPGA Configurable Neural Accelerator
 
-This document is a **portfolio-ready acceptance checklist**, not a certification statement. Do not mark a gate PASS without archived, reproducible evidence.
+**Date:** 26 November 2026 · **Release type:** verified development demonstrator; **not production qualified**.
 
-| Evidence | Goal | Status | File |
-|---|---|---|---|
-| Software functional reference | Signed fixed-point outputs match RTL for multiple networks | Existing tests PASS | `bash scripts/test.sh` |
-| Full UART regression | Correct programming, packet/checksum/reply | Existing directed tests PASS | `tb/tb_npu_uart_bridge.sv` |
-| Host protocol regressions | Encoded requests/replies, errors | Existing tests PASS | `tests/test_npu_serial.py` |\n| UART negative testing | Checksum-corrupt write, invalid commands/topology, reset parser | New simulation regression (CI PASS required); not a physical stress test | `tb/tb_npu_uart_robustness.sv` |\n| Hardware endurance tool | Serialized reference comparisons, reprogramming, durable logs | Tool added; not run on board | `host/reliability_campaign.py` |
-| Constrained timing closure | 100 MHz WNS >= 0, WHS >= 0 | UART integration and IP consumer PASS; consumer +2.006/+0.043 ns | Prior uploaded routed timing report |
-| FPGA resource metrics | LUT/FF/BRAM/DSP | Routed IP hierarchy: 811 LUT / 709 FF / 8 BRAM18 / 12 DSP | Prior uploaded Vivado reports |
-| Physical UART proof | Write model, run inference, Python parity | 3,000/3,000 user-reported hardware comparisons PASS | User hardware test screenshot |
-| Benchmark 3 model sizes | 100+ correct inferences each | PASS; 300 detailed JSON, later 3,000/3,000 user-reported | `build/benchmarks/benchmark_summary.json` |
-| Stability under repeated load | 1,000+ per topology with reset/reconnect | 1,000+ inference repeatability PASS; physical reset/recovery NOT RUN | docs/RELIABILITY_TESTS.md |
-| FPGA dispatch-to-valid cycle timing | Cycle counter over FPGA inference handshake | Hardware telemetry PASS: 114/250/2394 cycles | `--fpga-cycles` benchmark after reprogramming |
-| Power & energy | Physical rail measurement, power under activity | PENDING (78 mW Vivado estimate only) | docs/POWER_MEASUREMENT.md |
-| Reproducible deliverables | Independent build, GUI and measured results table | Demonstrated; full raw 3,000-case CSVs not archived | docs/START_HERE.md, docs/VERIFICATION_REPORT.md |
+This checklist distinguishes tests actually completed from requirements whose absence prevents an industrial production claim. The release does **not** warrant that all RTL bugs are absent.
 
-**Release definition:** "Verified development demonstrator" can be claimed after reliable hardware multi-model tests and reviewed reports. "Industrial-grade / production-ready" requires further fault robustness, complete constraints, reset/CDC and long-run evidence, plus requirements for the target application. These labels are not interchangeable.
+| Acceptance area | Result | Evidence / limitation |
+|---|---|---|
+| Reproducible source regression | **PASS in GitHub CI** | `scripts/test.sh`, Icarus Verilog and Python; test scope finite |
+| Signed fixed-point numerical oracle | **PASS** | 48 Python-golden cases via scalable core and IP wrapper |
+| Directed corner cases | **PASS in CI** | `tb/tb_npu_corner_cases.sv`: signed scores, tie, invalid topology, busy writes, reset |
+| UART packet and negative cases | **PASS in CI** | `tb/tb_npu_uart_robustness.sv`; no partial-frame timeout without reset |
+| Host protocol tests | **PASS in CI** | `tests/test_npu_serial.py`, CLI/GUI parsing |
+| IP-XACT packaging/catalog discovery | **Observed PASS in user Vivado** | `vivado/package_npu_ip.tcl`; catalog VLNV `…:npu_accelerator_ip:1.0` |
+| Independent IP consumer routed at 100 MHz | **Observed PASS** | WNS +2.006 ns / WHS +0.043 ns; IP 811 LUT, 709 FF, 8 BRAM18, 12 DSP |
+| Physical score comparisons | **300/300 archived summary PASS** | `docs/results/arty_a7_benchmark_2026-11-25.json` |
+| Larger physical repeatability | **3,000/3,000 reported PASS** | Full raw per-transaction records **not archived** |
+| FPGA compute latency | **Measured by FPGA telemetry** | 114 / 250 / 2,394 cycles at 100 MHz; host UART delay separate |
+| Power SAIF methodology | **Completed as EDA estimate** | Routed OOC core IP-9 55.4% net match; High overall confidence |
+| Routed OOC-core timing / resource review | **Observed PASS** | WNS +2.017 ns, WHS +0.181 ns; 959 LUT, 770 FF, 8 BRAM18, 12 DSP |
+| Model-image integrity / atomic update | **NOT IMPLEMENTED** | Integrating application must handle partial programming |
+| UART CRC and incomplete-frame timeout | **NOT IMPLEMENTED** | XOR checksum only; incomplete frame can wait indefinitely until reset |
+| Physical electrical power and energy/inference | **NOT MEASURED** | No rail meter; do not quote metered GOPS/W |
+| Extended stress, EMI, multiple-board environment | **NOT ESTABLISHED** | No field reliability or safety assurance claim |
+| Real bearing model accuracy | **NOT ESTABLISHED** | Separate [bearing application repository](https://github.com/msamie-elec/FPGA-Bearing-Condition-Monitoring) |
 
-## Evidence capture template
+**Decision:** suitable for publication as **application-independent, hardware-demonstrated FPGA NPU reference IP** provided the known limitations remain visible. **Do not call it production-ready, functionally safe, fault-tolerant, bug-free or trained for bearing failure detection.**
 
-For each run record:
-- Date and test operator, Git commit SHA and bitstream SHA256.
-- Hardware: Digilent Arty A7-35T, revision, clock, supply configuration.
-- Tools: Vivado, Icarus, Python, pyserial versions and host OS.
-- Topology, weight-pattern/model identifier, fixed-point shift, random seed.
-- Sample count, expected/actual outputs, error logs and UART round-trip latency statistics.
-- Vivado reports: routed timing, methodology, DRC, utilization and power estimate.
-- Instrument and measurement method if reporting FPGA core latency or electrical power.
+## Reproducibility rules for future runs
 
-Raw build reports/logs belong under ignored `build/` until curated, de-identified examples are deliberately added to a dedicated `docs/results/` location.
+Record the exact Git commit, tool versions, reference board/FPGA and hardware revision, intended top/bitstream, bitstream SHA256, constraints, weight-image ID, test seed, number of cases, failures, raw UART transactions, implementation reports, temperature/voltage assumptions and any meter calibration.
+
+Generated artifacts remain under `build/` and are Git-ignored. Selected attributable evidence may be published in `docs/results/`; do not silently turn screenshots or reported totals into fictitious raw-case files.
+
+**Source of truth:** [Technical Datasheet](TECHNICAL_DATASHEET.md) · [Verification Report](VERIFICATION_REPORT.md) · [Start Here](START_HERE.md).

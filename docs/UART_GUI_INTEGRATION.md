@@ -1,3 +1,5 @@
+> **Historical v0.4 integration milestone.** The initial status below predates successful 100 MHz routed UART implementation and physical FPGA benchmarks. For the latest project state see [Start Here](START_HERE.md), [Technical Datasheet](TECHNICAL_DATASHEET.md) and [Verification Report](VERIFICATION_REPORT.md).
+
 # V0.4 — UART / Arty A7 / Python GUI integration
 
 **Status: integrated RTL simulation and host protocol unit tests verified in CI. The integrated design has not yet been placed, routed, or physically tested on an FPGA.**
