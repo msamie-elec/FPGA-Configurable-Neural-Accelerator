@@ -23,7 +23,7 @@ Download updated GitHub `main` into your existing current checkout, or create on
 Use the following in the **Vivado 2025.2.1 Tcl Console** from a *fresh Vivado session*:
 
 ```tcl
-cd {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/FPGA-NN-Accelerator-IP-8}
+cd {C:/FPGA/NPU}
 source vivado/run_npu_routed_power.tcl
 ```
 
@@ -90,7 +90,7 @@ A further **full integrated UART/NPU post-route simulation** would require reali
 - [x] Local matched SAIF `report_power` and timing reports reviewed: 1,471/2,653 nets, High confidence, activity-aware 74/76/78 mW idle/loading/inference.
 - [ ] Real electrical measurements performed.
 
-The scripts have **not** been run inside Vivado by the developer; unexpected tool-version/placement constraints must be diagnosed from your actual Tcl output.
+The scripts were executed **successfully by the user in Vivado 2025.2.1** (IP-9); they were not executed in the GitHub Linux CI. Fresh tool/board environments must be reviewed independently.
 
 Reference: AMD [UG907, Vector (SAIF) Based Power Analysis](https://docs.amd.com/r/2025.1-English/ug907-vivado-power-analysis-optimization/Vector-SAIF-Based-Power-Analysis), [UG900, Post-implementation Simulation](https://docs.amd.com/r/2024.1-English/ug900-vivado-logic-simulation/Running-Post-Synthesis-and-Post-Implementation-Simulations).
 
