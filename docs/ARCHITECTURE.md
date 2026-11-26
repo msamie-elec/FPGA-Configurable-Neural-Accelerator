@@ -1,43 +1,66 @@
-# Architecture contract (fresh baseline)
+# Architecture and integration boundaries
 
-## System partition
+**Current implementation — 26 November 2026.** This document describes the actual reusable IP and two demonstrated board integrations. Earlier v0.1 experiments remain in `docs/MLP_V0_2.md` and `docs/SCALABLE_NPU_V0_3.md` as historical milestone records.
+
+## Compute architecture
 
 ```text
-PC GUI + trained model compiler (future)
-              |
-       UART protocol (future)
-              |
-   FPGA controller + memories (future)
-              |
-     NPU compute subsystem
-              |
-  Arty A7 physical integration
+               Runtime configuration / model writes
+                          |             |
+             4,096 INT8 weight bytes   128 INT32 bias words
+                     |                        |
+                8 BRAM banks                  |
+                     |  8 signed INT8 samples |
+ Input 32 x INT8 -> activation A/B buffers    |
+                     |                        |
+            8 signed INT8 multiply lanes       |
+                     |                        |
+              registered pairwise sums         |
+                     |                        |
+              registered four-way sums         |
+                     |                        |
+            INT32 neuron accumulation ---------+
+                     |
+              bias-add register
+                     |
+       arithmetic shift + INT8 saturation
+                     |
+         hidden-layer ReLU / output logits
+                     |
+        activation ping-pong / score latch
+                     |
+       lowest-index argmax + valid/error
 ```
 
-**Current implementation:** standalone signed INT8 4→2 dense engine and slide-switch/button/LED demonstration. All code lives in `rtl/`, not mirrored beneath a hardware or Vivado folder.
+- Four computational layers maximum, **32→32→32→32→8**, 3,328 logical active weights and 104 computational neurons at maximum configuration.
+- One neuron is evaluated across up to four groups of eight features; multiplier lanes are shared across neurons and layers.
+- Weight addressing: `layer*1024 + neuron*32 + input`, 8 banks, 512 byte entries each. Bias addressing: `layer*32 + neuron`.
+- Model SRAM is **undefined until programmed**, not cleared/initialised by reset. The core checks topology legality at inference request but **not model completeness**.
+- Signed INT32 arithmetic may overflow at its native width; no additional accumulator saturation occurs before shift.
+- Synchronous positive-edge clock; no AXI4, DMA, PCIe, Ethernet or streaming sensor frontend.
 
-## v0.1 computation
+## The two separately implemented FPGA systems
 
-`score[j] = sum(i=0..3, signed_int8(input[i]) * signed_int8(weight[j][i]))`.
+```text
+TRACK A — physical UART/GUI reference       TRACK B — reusable packaged IP
++----------------------------------+        +------------------------------+
+| PC Python GUI / benchmark         |        | Vivado consumer stimulus     |
+| 115200 baud framed UART           |        | memory programming + reset  |
+| npu_uart_bridge                   |        | npu_accelerator_ip (IP-XACT) |
+| npu_scalable_core                 |        | npu_scalable_core            |
+| Arty A7 UART/NPU top              |        | Arty A7 LED digest top       |
++----------------------------------+        +------------------------------+
+           Scores / cycles                           LED outputs (NO UART)
+```
 
-This baseline implements no bias, activation, scaling, or multiple layers. Each score accumulates in signed INT32. Class is 1 only if `score1 > score0` (ties return 0). The input is latched upon `start`. Writes are accepted only in IDLE; simultaneous write/start gives priority to write. `valid` pulses for one cycle at the end. Reset loads demonstration weights (see RTL). This simplified contract is deliberate and will change under versioned model protocols in later stages.
+Do not mix their bitstreams. The Track A canonical bitstream is `build/bitstream/arty_a7_uart_npu.bit`; Track B produces a distinct `arty_a7_ip_consumer_top.bit` with no serial interface.
 
-## Future architecture boundaries
+## Power verification is a third, separate study
 
-- `rtl/compute/`: MAC array, pipelining, requantisation.
-- `rtl/control/`: command decoding, layer sequencing, status.
-- `rtl/memory/`: inferred BRAM input/weight/activation storage.
-- `rtl/interfaces/`: UART transport, framing, error checks.
-- `rtl/top/`: single named FPGA top that integrates the above.
+The **post-route OOC NPU core** (IP-9) builds a routed checkpoint plus *matching* functional netlist to capture idle/loading/inference SAIF at 100 MHz. It is not a board top or a physically measured wattage. This experiment produced 55.4% SAIF net matching and High Vivado power confidence; its scope and results are in [Technical Datasheet](TECHNICAL_DATASHEET.md) and [Routed Core Power Workflow](ROUTED_CORE_POWER_WORKFLOW.md).
 
-These directories **do not exist until they contain functioning sources**. The v0.1 flat RTL directory avoids premature hierarchy.
+## Deployment interface for next application
 
-## Acceptance gates
+[FPGA Bearing Condition Monitoring](https://github.com/msamie-elec/FPGA-Bearing-Condition-Monitoring) is the **next intended application**. Its software pipeline builds eight features per vibration/current window and plans to produce a trained/quantised 8→16→8→2 model. Integrating that model requires externally validated scale/shift, signed INT8 feature encoding, explicit full model loading into this NPU, and FPGA-vs-Python output parity. This IP does **not** itself acquire sensors, train the model or establish classification accuracy.
 
-1. Self-checking simulation green.
-2. Synthesis with no inferred latches or multi-driver nets.
-3. Post-route 100 MHz setup timing met.
-4. Hardware switches/buttons/LEDs agree with simulation.
-5. Add model loading, reference Python oracle, GUI and randomised testing under separate milestone gates.
-
-Never publish performance claims without attached commands, version, device, clock, source commit and reports.
+See [IP Integration](IP_INTEGRATION.md), [Start Here](START_HERE.md), [Verification](VERIFICATION_REPORT.md) and [Datasheet](TECHNICAL_DATASHEET.md).
