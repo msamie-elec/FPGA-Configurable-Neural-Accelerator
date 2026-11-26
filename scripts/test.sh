@@ -85,3 +85,8 @@ python3 -m py_compile scripts/summarize_saif_power.py
 echo 'Validating netlist-power coverage screening (synthetic report fixtures) ...'
 python3 -m unittest discover -s tests -p 'test_netlist_saif_assessment.py' -v
 python3 -m py_compile scripts/assess_netlist_saif.py
+
+# Post-route Vivado itself is not available in GitHub's Linux CI runner.
+echo 'Checking routed-power report calculations with synthetic Vivado fixtures ...'
+python3 -m unittest discover -s tests -p 'test_routed_power_assessment.py' -v
+python3 -m py_compile scripts/assess_routed_power.py
