@@ -5,13 +5,13 @@
 **Release classification:** engineering-verified *development demonstrator*, **not** production-certified IP, AXI IP or a trained industrial classifier.  
 **Reference device:** Digilent Arty A7-35T / Artix-7 `xc7a35ticsg324-1L`. **Tools:** Vivado 2025.2.1, 100 MHz; Python 3 and optional Icarus Verilog.
 
-[**Complete Technical Datasheet**](docs/TECHNICAL_DATASHEET.md) · [Build/program/test guide](docs/START_HERE.md) · [Engineering verification evidence](docs/VERIFICATION_REPORT.md) · [Release acceptance criteria](docs/RELEASE_ACCEPTANCE.md)
+[**Complete Technical Datasheet**](docs/TECHNICAL_DATASHEET.md) · [Build/program/test guide](docs/START_HERE.md) · [Engineering verification evidence](docs/VERIFICATION_REPORT.md) · [Release acceptance criteria](docs/RELEASE_ACCEPTANCE.md) · [Release notes](docs/RELEASE_NOTES.md)
 
 ## Planned next application — bearing condition monitoring
 
 **The next intended deployment of this reusable neural inference IP is [FPGA Bearing Condition Monitoring](https://github.com/msamie-elec/FPGA-Bearing-Condition-Monitoring).**
 
-The accelerator remains **standalone and application-neutral**; the companion project supplies vibration and motor-current data processing, eight-feature extraction, external training/INT8 export, bearing-level evaluation and a monitoring GUI. The proposed application uses an **8→16→8→2** network, which fits this accelerator without changing the compute architecture.
+See the [bearing-model deployment handoff](docs/BEARING_DEPLOYMENT_HANDOFF.md) for the signed-INT8 feature ordering, weight map, model-loading contract and remaining cross-repository tests. The accelerator remains **standalone and application-neutral**; the companion project supplies vibration and motor-current data processing, eight-feature extraction, external training/INT8 export, bearing-level evaluation and a monitoring GUI. The proposed application uses an **8→16→8→2** network, which fits this accelerator without changing the compute architecture.
 
 ```text
 Bearing vibration/current → numerical feature extraction → INT8 model export
