@@ -204,3 +204,8 @@ The tool preserves every comparison and records aborted UART transactions; hardw
 - These tests demonstrate a working **development demonstrator**, not an ISO/IEC-certified product, commercial motor-health model or measured rail power.
 
 Next reading: [industrial verification plan](INDUSTRIAL_VERIFICATION.md), [release acceptance](RELEASE_ACCEPTANCE.md), [bitstream publishing](BITSTREAM_LOCATION.md).
+
+
+## Next intended downstream deployment
+
+[FPGA Bearing Condition Monitoring](https://github.com/msamie-elec/FPGA-Bearing-Condition-Monitoring) will integrate the accelerator with externally extracted vibration/motor-current features and a separately trained/validated 8→16→8→2 INT8 model. The application remains a **separate repository**; measured-data accuracy or completed FPGA deployment is **not** part of this source IP release. The [canonical engineering datasheet](TECHNICAL_DATASHEET.md) details the ports, quantisation rules and current qualification boundaries.
