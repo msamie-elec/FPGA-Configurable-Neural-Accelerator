@@ -19,7 +19,7 @@ The XSim script uses `$stop` simulation markers to start and end each SAIF windo
 Download updated `main` and enter its repository root, e.g.:
 
 ```tcl
-cd {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/FPGA-NN-Accelerator-IP-7}
+cd {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/NPU}
 source vivado/run_npu_power_saif.tcl
 ```
 
@@ -45,7 +45,7 @@ source vivado/analyze_npu_saif_power.tcl
 
 The script opens the `impl_1` routed implementation, measures a fresh vectorless baseline, then independently applies each activity file using `read_saif -strip_path tb_npu_power_activity`. It resets activity before each import to prevent mixing windows.
 
-Expected reports in the **IP-6 checkout**:
+Expected reports in the **same source checkout**:
 
 ```text
 build/power_activity/reports/power_vectorless.rpt
@@ -59,7 +59,7 @@ build/power_activity/reports/{idle,loading,inference}_unmatched.txt
 
 ## Stage C — summarise and review estimates (Windows PowerShell)
 
-From the IP-6 project root:
+From the same project root:
 
 ```powershell
 py scripts/summarize_saif_power.py --reports build/power_activity/reports --output build/power_activity/power_phase_summary.json
@@ -99,7 +99,7 @@ Until the three power reports actually exist, `summarize_saif_power.py` correctl
 With the **routed UART/NPU design already open** (`open_run impl_1`), set `power_dir` to the directory containing the three valid SAIF files:
 
 ```tcl
-set power_dir {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/FPGA-NN-Accelerator-IP-7/build/power_activity}
+set power_dir {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/NPU/build/power_activity}
 set reports [file join $power_dir reports]
 file mkdir $reports
 puts "Project top: [get_property TOP [get_filesets sources_1]]"
@@ -121,3 +121,6 @@ This is a workaround, not a claim that the signal mapping succeeded. Open each `
 In the first complete user run, the Arty A7 UART/NPU bitstream built successfully at 100 MHz (setup WNS **+1.588 ns**, hold WHS **+0.022 ns**) and all three SAIF files were generated. The first phase annotated **99/3,664** routed nets. The previous Tcl script then failed on a bare `report_switching_activity` call: **[Vivado 12-1004] Please provide a list of objects.** This prevented the loading/inference reports, and Python correctly reported missing files.
 
 The corrected script omits that optional, invalid diagnostic and verifies the four required reports. **Re-running just `source vivado/analyze_npu_saif_power.tcl` on the same checkout is sufficient; neither the FPGA bitstream nor SAIF needs rebuilding.** Mapping coverage of only ~3% still limits the credibility of the phase-specific power estimates; this script fix does not solve that fundamental problem.
+
+
+**Historical result:** the RTL-core-to-UART-route experiment did run, producing **99/3,664 matched nets** (~2.7%) and Medium confidence. These data are retained as a methodological negative control, **not** a credible phase-level power result. For the final qualified **routed-core** estimates, use [Routed Core Power Workflow](ROUTED_CORE_POWER_WORKFLOW.md) and the [Technical Datasheet](TECHNICAL_DATASHEET.md).
