@@ -1,3 +1,5 @@
+> **Historical investigation of a superseded failing implementation.** Later corrected implementations met 100 MHz timing; the negative slack here must not be quoted as the final design status. See [Verification Report](VERIFICATION_REPORT.md).
+
 # UART-NPU integrated 100 MHz implementation: first timing investigation
 
 The first integrated Arty A7-35T GUI implementation in Vivado 2025.2.1 **routed but failed setup timing**:
