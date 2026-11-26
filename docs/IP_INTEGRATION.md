@@ -6,7 +6,7 @@
 
 The IP wrapper instantiates the proven scalable NPU core and its eight BRAM-oriented weight banks. It has **no dependence on USB-UART, LED, pushbutton, board pin assignments or GUI**. It is an intentionally simple synchronous control/data interface, not an AXI4-Lite, AXI-Stream or DMA IP. Connecting to an AXI subsystem requires a separate, separately verified bridge.
 
-Vendor namespace: `msamie-elec.github.io`; library: `user`; name: `npu_accelerator_ip`; version: `1.0`. The intended VLNV is `msamie-elec.github.io:user:npu_accelerator_ip:1.0`, subject to actual Vivado packaging/catalog verification.
+Vendor namespace: `msamie-elec.github.io`; library: `user`; name: `npu_accelerator_ip`; version: `1.0`. The **user-verified** catalog VLNV is `msamie-elec.github.io:user:npu_accelerator_ip:1.0`.
 
 ## Port contract
 
@@ -28,7 +28,7 @@ Vendor namespace: `msamie-elec.github.io`; library: `user`; name: `npu_accelerat
 | `predicted_class` | out | 3 | Lowest-index argmax for final output scores |
 | `outputs` | out | 64 | Eight signed INT8 outputs, inactive lanes zero |
 
-All values are **little-lane order**; no byte endianness assumption is needed for the raw parallel ports. Both memories must be initialised by the integrating system after reset/power-up. IP has no runtime packet transport; attaching the existing UART frontend remains a *separate* system demonstration.
+All values are **little-lane order**; no byte endianness assumption is needed for the raw parallel ports. After FPGA power-up/configuration the application must program **every active** model memory address before first inference. A control reset alone does not erase these SRAM values, but does not make memory contents persistent across a power cycle. IP has no runtime packet transport; attaching the existing UART frontend remains a *separate* system demonstration.
 
 ## Reproducible simulation verification
 
@@ -40,7 +40,7 @@ The independent `tb/tb_npu_accelerator_ip.sv` drives a packed model and **all 48
 
 ## Create the IP-XACT catalog package (Vivado 2025.2.1)
 
-From a **fresh** Vivado Tcl session, with current directory anywhere:
+From a **fresh** Vivado Tcl session, with the **current directory set to the repository root**:
 
 ```tcl
 source vivado/package_npu_ip.tcl
@@ -52,7 +52,7 @@ Outputs to local ignored `build/ip_repo/npu_accelerator_ip_1_0/component.xml` (p
 source vivado/check_npu_ip_catalog.tcl
 ```
 
-**Packaging and catalog discovery passed in the first user Vivado 2025.2.1 run.** The revised metadata/wrapper and downstream consumer generation remain to be tested. Automated CI checks the RTL, not the vendor IP-XACT packager.
+**Packaging, catalog discovery, consumer creation and an independently routed consumer have been demonstrated** in user Vivado 2025.2.1. The Linux CI checks RTL and software; it does not run vendor IP-XACT packaging.
 
 ## Add to another Vivado design
 
@@ -69,11 +69,11 @@ Then open IP Integrator and search for **Configurable INT8 Neural Inference Acce
 
 - [x] Wrapper RTL and 48-case golden simulation (CI).
 - [x] Prior UART-integrated implementation timing and physical hardware numeric test.
-- [ ] Vivado IP packager generated a clean `component.xml` and passed catalog discovery.
-- [ ] IP instance independently synthesised in a consuming project.
-- [ ] IP standalone representative integration meets 100 MHz routed timing.
-- [ ] Reset/start/write/busy error handling strengthened under fault injection.
-- [ ] Signed-off datasheet with versioned Vivado, netlist and bitstream provenance.
+- [x] Vivado IP package `component.xml` generated; catalog discovery passed. Initial packaging warnings and any unverified metadata recommendations remain documented.
+- [x] IP instance independently synthesised in a consuming project.
+- [x] Representative consumer integrated the IP and met 100 MHz routed setup/hold timing (WNS +2.006 ns, WHS +0.043 ns).
+- [x] Directed reset/start, invalid-topology, write-during-busy and UART fault simulations passed; **live truncated-packet recovery without reset remains unimplemented**.
+- [x] Source-backed [engineering datasheet](TECHNICAL_DATASHEET.md) published; **per-build bitstream hashes/raw complete provenance and production sign-off are not available**.
 
 AMD reference: [Vivado Creating and Packaging Custom IP (UG1118)](https://docs.amd.com/r/en-US/ug1118-vivado-creating-packaging-custom-ip).
 
@@ -86,7 +86,7 @@ PACKAGED IP: .../build/ip_repo/npu_accelerator_ip_1_0/component.xml
 CATALOG DISCOVERY PASS: msamie-elec.github.io:user:npu_accelerator_ip:1.0
 ```
 
-The original package warned about a SystemVerilog top file, missing `FREQ_HZ`, missing product guide, and a clock with no associated bus interface. The packaging script now copies the Verilog-compatible wrapper into the generated build tree as a `.v` file and sets nominal `FREQ_HZ=100000000`. These corrections **must be retested using Vivado**. The direct synchronous interface has no AXI bus to associate with the clock.
+The original package warned about a SystemVerilog top file, missing `FREQ_HZ`, missing product guide, and a clock with no associated bus interface. The packaging script now copies the Verilog-compatible wrapper into the generated build tree as a `.v` file and sets nominal `FREQ_HZ=100000000`. Do not infer from the observed catalog success that every original packager advisory has been eliminated; inspect the current Vivado IP packaging and methodology messages for warnings. The direct synchronous interface has no AXI bus to associate with the clock.
 
 For an independent consumer-project smoke check, after packaging:
 
@@ -94,4 +94,9 @@ For an independent consumer-project smoke check, after packaging:
 source vivado/check_npu_ip_consumer.tcl
 ```
 
-This creates a separate Vivado project, discovers the packaged VLNV, instantiates the IP as an `.xci`, and generates its output targets. It **does not yet prove OOC or full top-level routed synthesis**; that is an additional qualification test.
+This creates a separate Vivado project, discovers the packaged VLNV, instantiates the IP as an `.xci`, and generates its output targets. This **catalog-generation smoke check alone** is not a routed-timing test; the separately executed `vivado/build_ip_consumer_impl.tcl` provides the additional routed consumer evidence.
+
+
+## Intended next application
+
+[FPGA Bearing Condition Monitoring](https://github.com/msamie-elec/FPGA-Bearing-Condition-Monitoring) is the next planned consumer of this bare synchronous interface. That project owns feature extraction, trained-model export and bearing-level validation. **No trained measured-data classifier is claimed by the current IP package.**
