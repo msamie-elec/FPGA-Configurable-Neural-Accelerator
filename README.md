@@ -170,3 +170,5 @@ bash scripts/test.sh
 ```
 
 Contributions should preserve exact signed fixed-point results and distinguish simulator, tool-estimated and physically measured results.
+
+**IP-9 routed-core power result (26 Nov 2026):** 100 MHz timing met (WNS +2.017 ns, WHS +0.181 ns), 55.4% SAIF net matching, High Vivado confidence; tool-estimated on-chip power **74 mW idle**, **76 mW loading**, **78 mW inference**. These are **core-only post-route estimates**, not physically metered watts or UART board measurements. [Source metrics](docs/results/ip9_routed_core_power_2026-11-26.json).
