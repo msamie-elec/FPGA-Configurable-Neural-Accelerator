@@ -19,7 +19,7 @@ The XSim script uses `$stop` simulation markers to start and end each SAIF windo
 Download updated `main` and enter its repository root, e.g.:
 
 ```tcl
-cd {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/NPU}
+cd {C:/FPGA/NPU}
 source vivado/run_npu_power_saif.tcl
 ```
 
@@ -99,7 +99,7 @@ Until the three power reports actually exist, `summarize_saif_power.py` correctl
 With the **routed UART/NPU design already open** (`open_run impl_1`), set `power_dir` to the directory containing the three valid SAIF files:
 
 ```tcl
-set power_dir {C:/Mohammad/Electronics/FPGA/Projects/FPGA-NN-Accelerator/NPU/build/power_activity}
+set power_dir {C:/FPGA/NPU/build/power_activity}
 set reports [file join $power_dir reports]
 file mkdir $reports
 puts "Project top: [get_property TOP [get_filesets sources_1]]"
