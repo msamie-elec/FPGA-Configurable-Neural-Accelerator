@@ -5,7 +5,7 @@
 - Original 25 November physical benchmark: **300/300** exact matches, 100 each for the small/medium/large reference networks.
 - Subsequent user-reported repeatability: **3,000/3,000** exact matches (1,000 each topology) with UART p95 times 16.284 ms / 16.317 ms / 15.504 ms.
 - Neither observation is a full field-reliability, environmental or lifetime qualification. The complete 3,000-case raw CSV and summary JSON are not yet checked into GitHub.
-- The new scripts in this folder were **not** part of those earlier physical campaigns.
+- The **repeat-model-loading** endurance script was later run successfully on the physical board for **3,000/3,000** reported comparisons with reprogramming every 250 operations, but its full per-transaction JSONL and campaign summary have **not** been archived. This does not replace resetting/power-cycling fault testing.
 
 ## Test suite A — protocol fault injection in simulation
 
@@ -59,8 +59,8 @@ The physical endurance command does **not** force a pushbutton reset, power cycl
 | Independent numeric RTL oracle, 48 cases | PASS |
 | Original 300/300 FPGA test | PASS |
 | Later 3,000/3,000 FPGA user-reported test | PASS (original results not yet archived) |
-| UART fault simulation (checksum/unknown/invalid/reset) | CI result required |
-| Extended campaign using new tool | NOT YET RUN ON FPGA |
+| UART fault simulation (checksum/unknown/invalid/reset) | PASS in GitHub CI |
+| Extended campaign using new tool | 3,000/3,000 **user-reported physical PASS with periodic reloading**; raw logs unavailable |
 | Physical reset during operation | NOT YET VERIFIED |
 | Partial-packet timeout/recovery without reset | UNSUPPORTED BY CURRENT UART RTL |
 | Power rail and energy/inference | NOT YET MEASURED |
