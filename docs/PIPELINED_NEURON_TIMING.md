@@ -1,3 +1,5 @@
+> **Historical debug note (25 Nov 2026).** The negative WNS below describes an earlier superseded RTL implementation. Subsequent UART, consumer and standalone routed-core builds have achieved positive 100 MHz setup/hold slack; see [Verification Report](VERIFICATION_REPORT.md).
+
 # 100 MHz correction — registered neuron post-processing
 
 Vivado's routed timing summary (25 Nov 2026, 17:39:50) identified worst setup slack **-1.931 ns**, with the path:
