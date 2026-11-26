@@ -1,3 +1,5 @@
+> **Historical milestone record.** Original proposed next steps here have since been implemented and benchmarked. For current implementation status, consult the [datasheet](TECHNICAL_DATASHEET.md) and [verification report](VERIFICATION_REPORT.md).
+
 # Scalable banked INT8 NPU — experimental V0.3
 
 ## Purpose and limitations
