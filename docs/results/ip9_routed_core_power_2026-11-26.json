@@ -1,0 +1,40 @@
+{
+  "evidence_type": "Vivado 2025.2.1 routed out-of-context NPU core, functional post-route SAIF, 100 MHz",
+  "origin": "User-provided IP-9 outputs: routed_power_assessment.json, timing_routed(9).rpt, utilization_routed(9).rpt, route_status.rpt, reports(3).zip",
+  "device": "xc7a35ticsg324-1L",
+  "implementation_scope": "routed NPU core only, not full UART board",
+  "simulation": "post-route functional netlist, no SDF / timing glitch capture",
+  "nominal_clock_mhz": 100,
+  "timing": {
+    "setup_wns_ns": 2.017,
+    "setup_tns_ns": 0,
+    "hold_whs_ns": 0.181,
+    "hold_ths_ns": 0,
+    "timing_constraints_met": true
+  },
+  "resources": {"slice_luts": 959, "slice_registers": 770, "dsp48e1": 12, "ramb18e1": 8},
+  "routing": {"routable_nets": 1436, "fully_routed_nets": 1436, "routing_error_nets": 0},
+  "saif": {"matched_nets": 1471, "design_nets": 2653, "match_fraction": 0.5544666415378816, "confidence": "High"},
+  "estimated_on_chip_power_mw": {
+    "vectorless": {"total": 82, "dynamic": 23, "device_static": 59},
+    "idle": {"total": 74, "dynamic": 15, "device_static": 59},
+    "model_loading": {"total": 76, "dynamic": 17, "device_static": 59},
+    "inference": {"total": 78, "dynamic": 19, "device_static": 59}
+  },
+  "estimated_resource_dynamic_power_mw": {
+    "clock": {"idle": 8, "model_loading": 8, "inference": 8},
+    "block_ram": {"idle": 7, "model_loading": 9, "inference": 7},
+    "dsp": {"idle": 0, "model_loading": 0, "inference": 2}
+  },
+  "limitations": [
+    "No external electrical power measurement",
+    "55.4% net match leaves 44.6% design nets unannotated",
+    "Functional post-route SAIF does not include SDF glitch activity",
+    "Full-FPGA static estimate, not isolated NPU static power",
+    "Not the same netlist or boundary as UART/NPU board",
+    "Model under test is deterministic, not an application-trained neural network",
+    "Figures rounded to nearest mW in Vivado reports; no physical energy or GOPS/W measured"
+  ],
+  "engineering_signoff": false,
+  "validation_state": "Routed timing PASS; power analysis complete with limitations; physical power signoff PENDING"
+}
