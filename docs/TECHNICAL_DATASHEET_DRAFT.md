@@ -83,3 +83,8 @@ The 25-Nov-2026 routed UART/NPU tool-estimated baseline is **80 mW on-chip** (18
 ## Netlist-activity power verification — in progress
 
 An additional **matched post-synthesis core-only** SAIF workflow has been added to improve upon the earlier 99/3,664 RTL-to-routed match. It runs a structural functional Verilog netlist against a matching synthesis checkpoint, and intentionally does not equate core OOC power with routed UART/FPGA board power. **No successful Vivado netlist simulation, matched annotation or physically measured energy figure has yet been returned.** See [Netlist Power Workflow](NETLIST_POWER_WORKFLOW.md).
+
+
+## Post-route activity-aware power (pending)
+
+An independent routed-core power experiment is available in `vivado/run_npu_routed_power.tcl`, simulating the **matching routed functional Verilog netlist** for three phase-specific SAIF power estimates. The work is currently **unverified on Vivado 2025.2.1**. No numeric post-route SAIF power is yet approved for publication. This OOC NPU core estimate must not be presented as a measurement of the UART board, and functional simulation excludes SDF glitch activity. See `docs/ROUTED_CORE_POWER_WORKFLOW.md`.
