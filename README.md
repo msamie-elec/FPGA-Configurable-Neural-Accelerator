@@ -81,6 +81,22 @@ This produces hierarchical IP/resource, timing, critical-path, DRC, methodology 
 
 **The supplied weights are deterministic numerical test fixtures, not a trained industrial classifier.** This repository assesses FPGA architecture, correctness and performance. It is deliberately independent of individual applications.
 
+## Routed-core power assessment (experimental)
+
+The new [post-route SAIF workflow](docs/ROUTED_CORE_POWER_WORKFLOW.md) builds a standalone **routed NPU core** with its own functional netlist and matching routed checkpoint. It replays the idle, model-loading and inference activity on the **routed netlist** to estimate placement/routing-aware power. In the Vivado Tcl Console of an updated checkout:
+
+```tcl
+source vivado/run_npu_routed_power.tcl
+```
+
+Then in PowerShell:
+
+```powershell
+py scripts/assess_routed_power.py --reports build/routed_core_power/reports
+```
+
+This is **not the integrated UART board implementation**, and its functional simulation excludes SDF glitch activity. All post-route figures remain pending Vivado execution. No previously validated bitstream or IP is changed.
+
 ## Matched post-synthesis netlist power assessment (experimental)
 
 The previous RTL-core SAIF data matched only **99/3,664** nets in the routed UART/NPU design. To address this, a new **core-only post-synthesis netlist SAIF** workflow is available: Vivado exports a functional core Verilog netlist and matching checkpoint, XSim captures idle/loading/inference activity from the structural netlist, and Vivado reads that SAIF into the **same** checkpoint. This is a separate OOC study; Vivado's static power still reflects the FPGA device, not only the NPU core. It is not a routed-UART or physical-power claim.
